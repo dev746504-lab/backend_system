@@ -22,7 +22,7 @@ async function bootstrap() {
   app.use(cookieParser());
   const frontendUrl = process.env.FRONTEND_URL;
   app.enableCors({
-    origin: (origin, callback) => {
+    origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
       if (!origin) return callback(null, true); // curl/server-to-server, no browser Origin header
       if (frontendUrl) return callback(null, origin === frontendUrl);
       // No FRONTEND_URL configured (local dev): Next.js picks a different port
