@@ -8,10 +8,16 @@ import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import type { AuthenticatedUser } from '../common/types/authenticated-user.js';
 
 const REFRESH_COOKIE = 'refresh_token';
+/**
+ * sameSite: 'none' — frontend and backend are deployed on different domains
+ * (e.g. Vercel + Render), so this is a genuinely cross-site cookie. 'strict'
+ * or 'lax' would silently never be sent back, breaking session persistence
+ * across reloads. Requires secure:true (HTTPS), which is already set.
+ */
 const REFRESH_COOKIE_OPTIONS = {
   httpOnly: true,
   secure: true,
-  sameSite: 'strict' as const,
+  sameSite: 'none' as const,
   path: '/auth',
   maxAge: 7 * 24 * 60 * 60 * 1000,
 };
