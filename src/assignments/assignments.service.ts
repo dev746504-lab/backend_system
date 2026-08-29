@@ -1,0 +1,44 @@
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { Assignment, type AssignmentDocument } from './schemas/assignment.schema.js';
+import { ClassMember, type ClassMemberDocument } from '../classes/schemas/class-member.schema.js';
+import { CreateAssignmentDto } from './dto/create-assignment.dto.js';
+import type { AuthenticatedUser } from '../common/types/authenticated-user.js';
+import { Role } from '../common/enums/role.enum.js';
+
+@Injectable()
+export class AssignmentsService {
+  constructor(
+    @InjectModel(Assignment.name) private readonly assignmentModel: Model<AssignmentDocument>,
+    @InjectModel(ClassMember.name) private readonly classMemberModel: Model<ClassMemberDocument>,
+  ) {}
+
+  async create(classId: string, teacher: AuthenticatedUser, dto: CreateAssignmentDto) {
+    const isTeacher = await this.classMemberModel.exists({ classId, userId: teacher.userId, role: 'teacher', status: 'active' });
+    if (!isTeacher) throw new ForbiddenException('Bạn không phụ trách lớp này');
+
+    return this.assignmentModel.create({
+      institutionId: teacher.institutionId!,
+      classId,
+      teacherId: teacher.userId,
+      ...dto,
+      dueDate: new Date(dto.dueDate),
+    });
+  }
+
+  listForClass(classId: string) {
+    return this.assignmentModel.find({ classId }).sort({ dueDate: 1 }).exec();
+  }
+
+  async findByIdForUser(assignmentId: string, user: AuthenticatedUser) {
+    const assignment = await this.assignmentModel.findOne({ _id: assignmentId, institutionId: user.institutionId }).exec();
+    if (!assignment) throw new NotFoundException('Không tìm thấy bài tập');
+
+    if (user.role === Role.STUDENT) {
+      const isMember = await this.classMemberModel.exists({ classId: assignment.classId, userId: user.userId, status: 'active' });
+      if (!isMember) throw new ForbiddenException('Bạn không thuộc lớp được giao bài này');
+    }
+    return assignment;
+  }
+}

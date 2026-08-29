@@ -1,0 +1,47 @@
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { HydratedDocument, Types } from 'mongoose';
+
+export type NotificationDocument = HydratedDocument<Notification>;
+
+@Schema({ _id: false })
+export class ReadReceipt {
+  @Prop({ type: Types.ObjectId, ref: 'User', required: true })
+  userId: Types.ObjectId;
+
+  @Prop({ required: true })
+  readAt: Date;
+}
+export const ReadReceiptSchema = SchemaFactory.createForClass(ReadReceipt);
+
+@Schema({ timestamps: true })
+export class Notification {
+  @Prop({ type: Types.ObjectId, ref: 'Institution', required: true, index: true })
+  institutionId: Types.ObjectId;
+
+  @Prop({ type: Types.ObjectId, ref: 'User', required: true })
+  senderId: Types.ObjectId;
+
+  @Prop({ enum: ['institution', 'class', 'user'], required: true })
+  scope: 'institution' | 'class' | 'user';
+
+  @Prop({ type: Types.ObjectId, ref: 'Class' })
+  classId?: Types.ObjectId;
+
+  @Prop({ type: Types.ObjectId, ref: 'User' })
+  recipientUserId?: Types.ObjectId;
+
+  @Prop({ required: true, trim: true, maxlength: 160 })
+  title: string;
+
+  @Prop({ required: true, trim: true, maxlength: 2000 })
+  content: string;
+
+  @Prop({ enum: ['announcement', 'assignment', 'grade', 'system'], default: 'announcement' })
+  type: 'announcement' | 'assignment' | 'grade' | 'system';
+
+  @Prop({ type: [ReadReceiptSchema], default: [] })
+  readBy: ReadReceipt[];
+}
+
+export const NotificationSchema = SchemaFactory.createForClass(Notification);
+NotificationSchema.index({ institutionId: 1, createdAt: -1 });
