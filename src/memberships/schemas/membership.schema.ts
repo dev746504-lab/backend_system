@@ -12,8 +12,8 @@ export class Membership {
   @Prop({ type: SchemaTypes.ObjectId, ref: 'Institution', required: true, index: true })
   institutionId: Types.ObjectId;
 
-  @Prop({ enum: [Role.INSTITUTION_ADMIN, Role.TEACHER, Role.STUDENT], required: true })
-  role: Role.INSTITUTION_ADMIN | Role.TEACHER | Role.STUDENT;
+  @Prop({ enum: [Role.TEACHER, Role.STUDENT], required: true })
+  role: Role.TEACHER | Role.STUDENT;
 
   @Prop({ type: SchemaTypes.ObjectId, ref: 'PermissionSet' })
   permissionSetId?: Types.ObjectId;

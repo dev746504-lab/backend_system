@@ -8,8 +8,8 @@ export class AddMemberDto {
   @IsString() @MinLength(2) @MaxLength(120)
   fullName: string;
 
-  @IsEnum([Role.INSTITUTION_ADMIN, Role.TEACHER, Role.STUDENT])
-  role: Role.INSTITUTION_ADMIN | Role.TEACHER | Role.STUDENT;
+  @IsEnum([Role.TEACHER, Role.STUDENT])
+  role: Role.TEACHER | Role.STUDENT;
 
   @IsOptional() @IsString()
   permissionSetId?: string;

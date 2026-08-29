@@ -15,13 +15,13 @@ export class ExamsController {
   constructor(private readonly exams: ExamsService) {}
 
   @Post()
-  @Roles(Role.TEACHER, Role.INSTITUTION_ADMIN)
+  @Roles(Role.TEACHER)
   create(@Param('institutionId') institutionId: string, @CurrentUser() user: AuthenticatedUser, @Body() dto: CreateExamDto) {
     return this.exams.create(institutionId, user.userId, dto);
   }
 
   @Patch(':examId/publish')
-  @Roles(Role.TEACHER, Role.INSTITUTION_ADMIN)
+  @Roles(Role.TEACHER)
   publish(@Param('institutionId') institutionId: string, @Param('examId') examId: string) {
     return this.exams.publish(examId, institutionId);
   }

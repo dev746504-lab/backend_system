@@ -5,7 +5,6 @@ import { Notification, type NotificationDocument } from './schemas/notification.
 import { ClassMember, type ClassMemberDocument } from '../classes/schemas/class-member.schema.js';
 import { SendNotificationDto } from './dto/send-notification.dto.js';
 import type { AuthenticatedUser } from '../common/types/authenticated-user.js';
-import { Role } from '../common/enums/role.enum.js';
 
 @Injectable()
 export class NotificationsService {
@@ -14,16 +13,12 @@ export class NotificationsService {
     @InjectModel(ClassMember.name) private readonly classMemberModel: Model<ClassMemberDocument>,
   ) {}
 
+  /** Guard đã giới hạn endpoint cho Role.TEACHER — mọi giáo viên đều được gửi thông báo toàn CSGD. */
   async send(sender: AuthenticatedUser, dto: SendNotificationDto) {
-    if (dto.scope === 'institution' && sender.role !== Role.INSTITUTION_ADMIN) {
-      throw new ForbiddenException('Chỉ CSGD được gửi thông báo toàn trường');
-    }
     if (dto.scope === 'class') {
       if (!dto.classId) throw new BadRequestException('Thiếu classId cho thông báo theo lớp');
-      if (sender.role === Role.TEACHER) {
-        const isTeacher = await this.classMemberModel.exists({ classId: dto.classId, userId: sender.userId, role: 'teacher', status: 'active' });
-        if (!isTeacher) throw new ForbiddenException('Bạn không phụ trách lớp này');
-      }
+      const isTeacher = await this.classMemberModel.exists({ classId: dto.classId, userId: sender.userId, role: 'teacher', status: 'active' });
+      if (!isTeacher) throw new ForbiddenException('Bạn không phụ trách lớp này');
     }
 
     return this.notificationModel.create({

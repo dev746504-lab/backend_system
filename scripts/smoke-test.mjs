@@ -91,9 +91,9 @@ async function main() {
   const approve = await call(`/institutions/${institutionId}/approve`, { method: "PATCH", headers: { Authorization: `Bearer ${sysToken}` } });
   ok("PATCH /institutions/:id/approve", approve.status === 200 && approve.body.status === "active", approve);
 
-  // --- institution_admin logs in, adds a teacher + student, creates a class ---
+  // --- the registering teacher (top authority in this CSGD) logs in, adds a teacher + student, creates a class ---
   const adminLogin = await call("/auth/login", { method: "POST", body: JSON.stringify({ email: "admin@truongabc.vn", password: "MatKhau123!" }) });
-  ok("institution_admin login", adminLogin.status === 200, adminLogin);
+  ok("registering teacher login", adminLogin.status === 200 && adminLogin.body.user.role === "teacher", adminLogin);
   const adminToken = adminLogin.body.accessToken;
   const auth = { Authorization: `Bearer ${adminToken}` };
 

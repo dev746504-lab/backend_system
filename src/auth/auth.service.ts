@@ -24,9 +24,10 @@ export class AuthService {
   ) {}
 
   /**
-   * Đăng ký CSGD mới: tạo User + Institution(pending) + Membership(institution_admin)
-   * trong cùng một transaction — nếu bất kỳ bước nào lỗi (VD: code trùng),
-   * không để lại user hoặc institution mồ côi.
+   * Đăng ký CSGD mới: tạo User + Institution(pending) + Membership(teacher)
+   * trong cùng một transaction - nếu bất kỳ bước nào lỗi (VD: code trùng),
+   * không để lại user hoặc institution mồ côi. Giáo viên đăng ký là người có
+   * toàn quyền quản lý CSGD (không còn vai trò institution_admin riêng).
    */
   async registerInstitution(dto: RegisterInstitutionDto) {
     const existing = await this.users.findByEmail(dto.email);
@@ -47,7 +48,7 @@ export class AuthService {
         await this.memberships.create({
           userId: user._id,
           institutionId: institution._id,
-          role: Role.INSTITUTION_ADMIN,
+          role: Role.TEACHER,
           session,
         });
         result = { userId: String(user._id), institutionId: String(institution._id) };

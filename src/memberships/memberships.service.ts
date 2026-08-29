@@ -11,7 +11,7 @@ export class MembershipsService {
   create(data: {
     userId: string | Types.ObjectId;
     institutionId: string | Types.ObjectId;
-    role: Role.INSTITUTION_ADMIN | Role.TEACHER | Role.STUDENT;
+    role: Role.TEACHER | Role.STUDENT;
     session?: ClientSession;
   }) {
     return this.membershipModel.create(

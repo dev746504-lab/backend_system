@@ -22,7 +22,7 @@ export class SubmissionsController {
   }
 
   @Get('assignments/:assignmentId/submissions')
-  @Roles(Role.TEACHER, Role.INSTITUTION_ADMIN)
+  @Roles(Role.TEACHER)
   listForAssignment(@Param('assignmentId') assignmentId: string) {
     return this.submissions.listForAssignment(assignmentId);
   }

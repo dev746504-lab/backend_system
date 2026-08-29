@@ -16,7 +16,7 @@ export class ClassesController {
   constructor(private readonly classes: ClassesService) {}
 
   @Post('institutions/:institutionId/classes')
-  @Roles(Role.INSTITUTION_ADMIN)
+  @Roles(Role.TEACHER)
   create(@Param('institutionId') institutionId: string, @Body() dto: CreateClassDto) {
     return this.classes.create(institutionId, dto);
   }
@@ -32,7 +32,7 @@ export class ClassesController {
   }
 
   @Post('classes/:classId/members')
-  @Roles(Role.INSTITUTION_ADMIN)
+  @Roles(Role.TEACHER)
   addMember(@Param('classId') classId: string, @CurrentUser() user: AuthenticatedUser, @Body() dto: AddClassMemberDto) {
     return this.classes.addMember(classId, user.institutionId!, dto);
   }

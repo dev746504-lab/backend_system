@@ -15,7 +15,7 @@ export class NotificationsController {
   constructor(private readonly notifications: NotificationsService) {}
 
   @Post()
-  @Roles(Role.INSTITUTION_ADMIN, Role.TEACHER)
+  @Roles(Role.TEACHER)
   send(@CurrentUser() sender: AuthenticatedUser, @Body() dto: SendNotificationDto) {
     return this.notifications.send(sender, dto);
   }

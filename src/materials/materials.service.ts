@@ -22,7 +22,7 @@ export class MaterialsService {
 
   /** Kho học liệu mà user hiện tại được phép khai thác/truy cập. */
   async listVisible(institutionId: string, user: AuthenticatedUser) {
-    if (user.role === Role.INSTITUTION_ADMIN) {
+    if (user.role === Role.TEACHER) {
       return this.materialModel.find({ institutionId }).sort({ createdAt: -1 }).exec();
     }
 

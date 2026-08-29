@@ -11,7 +11,7 @@ import type { AuthenticatedUser } from '../common/types/authenticated-user.js';
 
 @Controller('institutions/:institutionId/questions')
 @UseGuards(JwtAuthGuard, RolesGuard, TenantGuard)
-@Roles(Role.TEACHER, Role.INSTITUTION_ADMIN)
+@Roles(Role.TEACHER)
 export class QuestionBankController {
   constructor(private readonly questions: QuestionBankService) {}
 

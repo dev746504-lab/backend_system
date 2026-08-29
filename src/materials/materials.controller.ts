@@ -16,7 +16,7 @@ export class MaterialsController {
   constructor(private readonly materials: MaterialsService) {}
 
   @Post()
-  @Roles(Role.TEACHER, Role.INSTITUTION_ADMIN)
+  @Roles(Role.TEACHER)
   create(@Param('institutionId') institutionId: string, @CurrentUser() user: AuthenticatedUser, @Body() dto: CreateMaterialDto) {
     return this.materials.create(institutionId, user.userId, dto);
   }
@@ -27,13 +27,13 @@ export class MaterialsController {
   }
 
   @Patch(':materialId/share')
-  @Roles(Role.TEACHER, Role.INSTITUTION_ADMIN)
+  @Roles(Role.TEACHER)
   share(@Param('materialId') materialId: string, @CurrentUser() user: AuthenticatedUser, @Body() dto: ShareMaterialDto) {
     return this.materials.share(materialId, user, dto);
   }
 
   @Patch(':materialId/moderate')
-  @Roles(Role.INSTITUTION_ADMIN)
+  @Roles(Role.TEACHER)
   moderate(
     @Param('institutionId') institutionId: string,
     @Param('materialId') materialId: string,

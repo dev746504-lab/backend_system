@@ -46,18 +46,18 @@ export class InstitutionsController {
   }
 
   @Get(':institutionId/members')
-  @Roles(Role.INSTITUTION_ADMIN)
+  @Roles(Role.TEACHER)
   listMembers(@Param('institutionId') institutionId: string) {
     return this.memberships.listForInstitution(institutionId);
   }
 
   /**
-   * CSGD thêm thành viên (giáo viên/học sinh/quản trị viên phụ) và gán vai trò.
-   * Nếu email chưa tồn tại tài khoản, tạo user mới với mật khẩu tạm — trong
-   * triển khai thật cần thay bằng luồng email mời + đặt mật khẩu qua token.
+   * Giáo viên (vai trò cao nhất trong CSGD) thêm thành viên (giáo viên khác/học sinh)
+   * và gán vai trò. Nếu email chưa tồn tại tài khoản, tạo user mới với mật khẩu tạm -
+   * trong triển khai thật cần thay bằng luồng email mời + đặt mật khẩu qua token.
    */
   @Post(':institutionId/members')
-  @Roles(Role.INSTITUTION_ADMIN)
+  @Roles(Role.TEACHER)
   async addMember(@Param('institutionId') institutionId: string, @Body() dto: AddMemberDto) {
     const institution = await this.institutions.findById(institutionId);
     if (institution?.status !== 'active') {

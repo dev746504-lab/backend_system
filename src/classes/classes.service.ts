@@ -19,9 +19,9 @@ export class ClassesService {
     return this.classModel.create({ institutionId, ...dto });
   }
 
-  /** Admin sees every class in the institution; teacher/student see only classes they belong to. */
+  /** Teacher (vai trò cao nhất trong CSGD) thấy mọi lớp; học sinh chỉ thấy lớp mình tham gia. */
   async listForUser(institutionId: string, user: AuthenticatedUser) {
-    if (user.role === Role.INSTITUTION_ADMIN) {
+    if (user.role === Role.TEACHER) {
       return this.classModel.find({ institutionId, status: 'active' }).exec();
     }
     const memberships = await this.classMemberModel.find({ userId: user.userId, status: 'active' }).exec();
@@ -32,7 +32,7 @@ export class ClassesService {
   async findByIdForUser(classId: string, user: AuthenticatedUser) {
     const klass = await this.classModel.findOne({ _id: classId, institutionId: user.institutionId }).exec();
     if (!klass) throw new NotFoundException('Không tìm thấy lớp học');
-    if (user.role !== Role.INSTITUTION_ADMIN) {
+    if (user.role !== Role.TEACHER) {
       const isMember = await this.classMemberModel.exists({ classId, userId: user.userId, status: 'active' });
       if (!isMember) throw new ForbiddenException('Bạn không thuộc lớp học này');
     }
