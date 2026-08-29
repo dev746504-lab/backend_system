@@ -24,10 +24,12 @@ async function bootstrap() {
   app.enableCors({
     origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
       if (!origin) return callback(null, true); // curl/server-to-server, no browser Origin header
-      if (frontendUrl) return callback(null, origin === frontendUrl);
-      // No FRONTEND_URL configured (local dev): Next.js picks a different port
-      // whenever 3000 is busy, so pin nothing - allow any localhost origin.
-      return callback(null, /^https?:\/\/localhost:\d+$/.test(origin));
+      if (frontendUrl && origin === frontendUrl) return callback(null, true);
+      // Always allow any localhost port regardless of FRONTEND_URL: Next.js
+      // picks a different port whenever its usual one is busy, and pinning
+      // FRONTEND_URL to one exact local port breaks the moment it drifts.
+      if (/^https?:\/\/localhost:\d+$/.test(origin)) return callback(null, true);
+      return callback(null, false);
     },
     credentials: true,
   });
