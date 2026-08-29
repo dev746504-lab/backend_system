@@ -1,7 +1,12 @@
 import 'dotenv/config';
+import dns from 'node:dns';
 import mongoose from 'mongoose';
 import * as argon2 from 'argon2';
 import { User, UserSchema } from '../users/schemas/user.schema.js';
+
+if (process.env.MONGODB_DNS_SERVERS) {
+  dns.setServers(process.env.MONGODB_DNS_SERVERS.split(',').map((s) => s.trim()));
+}
 
 /**
  * Tạo tài khoản Quản trị hệ thống (system_admin) đầu tiên — vai trò này

@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument, Types } from 'mongoose';
+import { HydratedDocument, SchemaTypes, Types } from 'mongoose';
 
 export type InstitutionDocument = HydratedDocument<Institution>;
 
@@ -28,10 +28,10 @@ export class Institution {
   @Prop({ enum: ['pending', 'active', 'suspended'], default: 'pending' })
   status: 'pending' | 'active' | 'suspended';
 
-  @Prop({ type: Types.ObjectId, ref: 'User', required: true })
+  @Prop({ type: SchemaTypes.ObjectId, ref: 'User', required: true })
   createdBy: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: 'User' })
+  @Prop({ type: SchemaTypes.ObjectId, ref: 'User' })
   approvedBy?: Types.ObjectId;
 
   @Prop()
@@ -39,5 +39,4 @@ export class Institution {
 }
 
 export const InstitutionSchema = SchemaFactory.createForClass(Institution);
-InstitutionSchema.index({ code: 1 }, { unique: true });
 InstitutionSchema.index({ status: 1 });

@@ -1,17 +1,17 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument, Types } from 'mongoose';
+import { HydratedDocument, SchemaTypes, Types } from 'mongoose';
 
 export type AssignmentDocument = HydratedDocument<Assignment>;
 
 @Schema({ timestamps: true })
 export class Assignment {
-  @Prop({ type: Types.ObjectId, ref: 'Institution', required: true, index: true })
+  @Prop({ type: SchemaTypes.ObjectId, ref: 'Institution', required: true, index: true })
   institutionId: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: 'Class', required: true, index: true })
+  @Prop({ type: SchemaTypes.ObjectId, ref: 'Class', required: true, index: true })
   classId: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: 'User', required: true })
+  @Prop({ type: SchemaTypes.ObjectId, ref: 'User', required: true })
   teacherId: Types.ObjectId;
 
   @Prop({ required: true, trim: true, maxlength: 200 })
@@ -23,10 +23,10 @@ export class Assignment {
   @Prop({ enum: ['online', 'offline'], required: true })
   type: 'online' | 'offline';
 
-  @Prop({ type: Types.ObjectId, ref: 'Exam' })
+  @Prop({ type: SchemaTypes.ObjectId, ref: 'Exam' })
   examId?: Types.ObjectId;
 
-  @Prop({ type: [Types.ObjectId], ref: 'LearningMaterial', default: [] })
+  @Prop({ type: [SchemaTypes.ObjectId], ref: 'LearningMaterial', default: [] })
   attachedMaterialIds: Types.ObjectId[];
 
   @Prop({ required: true })

@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument, Types } from 'mongoose';
+import { HydratedDocument, SchemaTypes, Types } from 'mongoose';
 
 export type StudentProgressDocument = HydratedDocument<StudentProgress>;
 
@@ -10,10 +10,10 @@ export type StudentProgressDocument = HydratedDocument<StudentProgress>;
  */
 @Schema({ timestamps: true })
 export class StudentProgress {
-  @Prop({ type: Types.ObjectId, ref: 'User', required: true, index: true })
+  @Prop({ type: SchemaTypes.ObjectId, ref: 'User', required: true, index: true })
   studentId: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: 'Class', required: true, index: true })
+  @Prop({ type: SchemaTypes.ObjectId, ref: 'Class', required: true, index: true })
   classId: Types.ObjectId;
 
   @Prop({ trim: true })

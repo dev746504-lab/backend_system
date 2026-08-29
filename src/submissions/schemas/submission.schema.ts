@@ -1,14 +1,14 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument, Types } from 'mongoose';
+import { HydratedDocument, SchemaTypes, Types } from 'mongoose';
 
 export type SubmissionDocument = HydratedDocument<Submission>;
 
 @Schema({ timestamps: true })
 export class Submission {
-  @Prop({ type: Types.ObjectId, ref: 'Assignment', required: true, index: true })
+  @Prop({ type: SchemaTypes.ObjectId, ref: 'Assignment', required: true, index: true })
   assignmentId: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: 'User', required: true, index: true })
+  @Prop({ type: SchemaTypes.ObjectId, ref: 'User', required: true, index: true })
   studentId: Types.ObjectId;
 
   /** Chốt lại maxScore của assignment tại thời điểm nộp, để validate score không phụ thuộc thay đổi sau này. */
@@ -38,7 +38,7 @@ export class Submission {
   @Prop({ trim: true, maxlength: 1000 })
   feedback?: string;
 
-  @Prop({ type: Types.ObjectId, ref: 'User' })
+  @Prop({ type: SchemaTypes.ObjectId, ref: 'User' })
   gradedBy?: Types.ObjectId;
 
   @Prop()

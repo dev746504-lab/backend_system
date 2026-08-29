@@ -50,4 +50,6 @@ npm run seed:admin -- admin@lms.vn "MatKhauManh123!"
 ```bash
 npm run test        # unit test (vitest)
 npm run test:e2e     # cần MONGODB_URI trỏ tới một database test
+npm run smoke        # build + chạy toàn bộ luồng trên (đăng ký → duyệt → lớp → giao bài → chấm bài → báo cáo)
+                      # qua HTTP thật, trên một MongoDB replica set tạm trong bộ nhớ — không đụng tới Mongo cục bộ nào khác
 ```

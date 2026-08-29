@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument, Types } from 'mongoose';
+import { HydratedDocument, SchemaTypes, Types } from 'mongoose';
 
 export type PermissionSetDocument = HydratedDocument<PermissionSet>;
 
@@ -10,7 +10,7 @@ export type PermissionSetDocument = HydratedDocument<PermissionSet>;
  */
 @Schema({ timestamps: true })
 export class PermissionSet {
-  @Prop({ type: Types.ObjectId, ref: 'Institution', required: true, index: true })
+  @Prop({ type: SchemaTypes.ObjectId, ref: 'Institution', required: true, index: true })
   institutionId: Types.ObjectId;
 
   @Prop({ required: true, trim: true, maxlength: 80 })
@@ -19,7 +19,7 @@ export class PermissionSet {
   @Prop({ type: [String], default: [] })
   permissions: string[];
 
-  @Prop({ type: Types.ObjectId, ref: 'User', required: true })
+  @Prop({ type: SchemaTypes.ObjectId, ref: 'User', required: true })
   createdBy: Types.ObjectId;
 }
 

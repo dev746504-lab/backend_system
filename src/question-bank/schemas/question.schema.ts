@@ -1,14 +1,14 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument, Types } from 'mongoose';
+import { HydratedDocument, SchemaTypes, Types } from 'mongoose';
 
 export type QuestionDocument = HydratedDocument<Question>;
 
 @Schema({ timestamps: true })
 export class Question {
-  @Prop({ type: Types.ObjectId, ref: 'Institution', required: true, index: true })
+  @Prop({ type: SchemaTypes.ObjectId, ref: 'Institution', required: true, index: true })
   institutionId: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: 'User', required: true })
+  @Prop({ type: SchemaTypes.ObjectId, ref: 'User', required: true })
   ownerId: Types.ObjectId;
 
   @Prop({ trim: true })
@@ -36,7 +36,7 @@ export class Question {
   @Prop({ type: [String], default: [] })
   tags: string[];
 
-  @Prop({ type: Types.ObjectId, ref: 'LearningMaterial' })
+  @Prop({ type: SchemaTypes.ObjectId, ref: 'LearningMaterial' })
   sourceMaterialId?: Types.ObjectId;
 }
 

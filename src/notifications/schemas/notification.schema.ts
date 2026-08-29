@@ -1,11 +1,11 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument, Types } from 'mongoose';
+import { HydratedDocument, SchemaTypes, Types } from 'mongoose';
 
 export type NotificationDocument = HydratedDocument<Notification>;
 
 @Schema({ _id: false })
 export class ReadReceipt {
-  @Prop({ type: Types.ObjectId, ref: 'User', required: true })
+  @Prop({ type: SchemaTypes.ObjectId, ref: 'User', required: true })
   userId: Types.ObjectId;
 
   @Prop({ required: true })
@@ -15,19 +15,19 @@ export const ReadReceiptSchema = SchemaFactory.createForClass(ReadReceipt);
 
 @Schema({ timestamps: true })
 export class Notification {
-  @Prop({ type: Types.ObjectId, ref: 'Institution', required: true, index: true })
+  @Prop({ type: SchemaTypes.ObjectId, ref: 'Institution', required: true, index: true })
   institutionId: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: 'User', required: true })
+  @Prop({ type: SchemaTypes.ObjectId, ref: 'User', required: true })
   senderId: Types.ObjectId;
 
   @Prop({ enum: ['institution', 'class', 'user'], required: true })
   scope: 'institution' | 'class' | 'user';
 
-  @Prop({ type: Types.ObjectId, ref: 'Class' })
+  @Prop({ type: SchemaTypes.ObjectId, ref: 'Class' })
   classId?: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: 'User' })
+  @Prop({ type: SchemaTypes.ObjectId, ref: 'User' })
   recipientUserId?: Types.ObjectId;
 
   @Prop({ required: true, trim: true, maxlength: 160 })

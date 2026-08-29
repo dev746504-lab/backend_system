@@ -1,11 +1,11 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument, Types } from 'mongoose';
+import { HydratedDocument, SchemaTypes, Types } from 'mongoose';
 
 export type ExamDocument = HydratedDocument<Exam>;
 
 @Schema({ _id: false })
 export class ExamQuestionRef {
-  @Prop({ type: Types.ObjectId, ref: 'Question', required: true })
+  @Prop({ type: SchemaTypes.ObjectId, ref: 'Question', required: true })
   questionId: Types.ObjectId;
 
   @Prop({ required: true, min: 0 })
@@ -15,10 +15,10 @@ export const ExamQuestionRefSchema = SchemaFactory.createForClass(ExamQuestionRe
 
 @Schema({ timestamps: true })
 export class Exam {
-  @Prop({ type: Types.ObjectId, ref: 'Institution', required: true, index: true })
+  @Prop({ type: SchemaTypes.ObjectId, ref: 'Institution', required: true, index: true })
   institutionId: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: 'User', required: true })
+  @Prop({ type: SchemaTypes.ObjectId, ref: 'User', required: true })
   createdBy: Types.ObjectId;
 
   @Prop({ required: true, trim: true, maxlength: 200 })

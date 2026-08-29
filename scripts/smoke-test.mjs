@@ -79,15 +79,6 @@ async function main() {
   });
   ok("POST /auth/register-institution", reg.status === 201 || reg.status === 200, reg);
 
-  {
-    const debugDb = await mongoose.createConnection(uri).asPromise();
-    const users = await debugDb.collection("users").find({}).toArray();
-    const memberships = await debugDb.collection("memberships").find({}).toArray();
-    console.log("DEBUG users:", JSON.stringify(users, null, 2));
-    console.log("DEBUG memberships:", JSON.stringify(memberships, null, 2));
-    await debugDb.close();
-  }
-
   // --- system_admin logs in and approves the institution ---
   const sysLogin = await call("/auth/login", { method: "POST", body: JSON.stringify({ email: "admin@lms.vn", password: "SysAdmin123!" }) });
   ok("system_admin login", sysLogin.status === 200 && sysLogin.body.user.role === "system_admin", sysLogin);
@@ -197,4 +188,15 @@ async function main() {
   });
   ok("send institution notification", notif.status === 201 || notif.status === 200, notif);
 
-  const studentNotif
+  const studentNotifs = await call("/notifications", { headers: studentAuth });
+  ok("student receives institution notification", studentNotifs.status === 200 && studentNotifs.body.length === 1, studentNotifs);
+
+  console.log(`\n${failures === 0 ? "ALL PASSED" : `${failures} FAILED`}`);
+  await replSet.stop();
+  process.exit(failures === 0 ? 0 : 1);
+}
+
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

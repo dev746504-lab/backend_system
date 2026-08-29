@@ -1,14 +1,14 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument, Types } from 'mongoose';
+import { HydratedDocument, SchemaTypes, Types } from 'mongoose';
 
 export type ClassMemberDocument = HydratedDocument<ClassMember>;
 
 @Schema({ timestamps: true })
 export class ClassMember {
-  @Prop({ type: Types.ObjectId, ref: 'Class', required: true, index: true })
+  @Prop({ type: SchemaTypes.ObjectId, ref: 'Class', required: true, index: true })
   classId: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: 'User', required: true, index: true })
+  @Prop({ type: SchemaTypes.ObjectId, ref: 'User', required: true, index: true })
   userId: Types.ObjectId;
 
   @Prop({ enum: ['teacher', 'student'], required: true })

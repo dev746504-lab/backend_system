@@ -1,14 +1,14 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument, Types } from 'mongoose';
+import { HydratedDocument, SchemaTypes, Types } from 'mongoose';
 
 export type LearningMaterialDocument = HydratedDocument<LearningMaterial>;
 
 @Schema({ timestamps: true })
 export class LearningMaterial {
-  @Prop({ type: Types.ObjectId, ref: 'Institution', required: true, index: true })
+  @Prop({ type: SchemaTypes.ObjectId, ref: 'Institution', required: true, index: true })
   institutionId: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: 'User', required: true, index: true })
+  @Prop({ type: SchemaTypes.ObjectId, ref: 'User', required: true, index: true })
   ownerId: Types.ObjectId;
 
   @Prop({ required: true, trim: true, maxlength: 200 })
@@ -21,7 +21,7 @@ export class LearningMaterial {
   @Prop({ enum: ['private', 'class', 'institution'], default: 'private' })
   visibility: 'private' | 'class' | 'institution';
 
-  @Prop({ type: [Types.ObjectId], ref: 'Class', default: [] })
+  @Prop({ type: [SchemaTypes.ObjectId], ref: 'Class', default: [] })
   sharedWithClassIds: Types.ObjectId[];
 
   @Prop({ trim: true })

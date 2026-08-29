@@ -1,9 +1,20 @@
+import dns from 'node:dns';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module.js';
 import { MongoExceptionFilter } from './common/filters/mongo-exception.filter.js';
+
+/**
+ * Some local routers/DNS forwarders don't answer the SRV queries the
+ * `mongodb+srv://` driver needs, even though normal A-record lookups work
+ * fine (surfaces as `querySrv ECONNREFUSED`). Opt-in only, via .env, so
+ * hosted environments with correct DNS are never affected.
+ */
+if (process.env.MONGODB_DNS_SERVERS) {
+  dns.setServers(process.env.MONGODB_DNS_SERVERS.split(',').map((s) => s.trim()));
+}
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);

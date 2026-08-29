@@ -1,21 +1,21 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument, Types } from 'mongoose';
+import { HydratedDocument, SchemaTypes, Types } from 'mongoose';
 import { Role } from '../../common/enums/role.enum.js';
 
 export type MembershipDocument = HydratedDocument<Membership>;
 
 @Schema({ timestamps: true })
 export class Membership {
-  @Prop({ type: Types.ObjectId, ref: 'User', required: true, index: true })
+  @Prop({ type: SchemaTypes.ObjectId, ref: 'User', required: true, index: true })
   userId: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: 'Institution', required: true, index: true })
+  @Prop({ type: SchemaTypes.ObjectId, ref: 'Institution', required: true, index: true })
   institutionId: Types.ObjectId;
 
   @Prop({ enum: [Role.INSTITUTION_ADMIN, Role.TEACHER, Role.STUDENT], required: true })
   role: Role.INSTITUTION_ADMIN | Role.TEACHER | Role.STUDENT;
 
-  @Prop({ type: Types.ObjectId, ref: 'PermissionSet' })
+  @Prop({ type: SchemaTypes.ObjectId, ref: 'PermissionSet' })
   permissionSetId?: Types.ObjectId;
 
   @Prop({ enum: ['invited', 'active', 'removed'], default: 'active' })
