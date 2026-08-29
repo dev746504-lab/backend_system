@@ -20,8 +20,15 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.use(cookieParser());
+  const frontendUrl = process.env.FRONTEND_URL;
   app.enableCors({
-    origin: process.env.FRONTEND_URL ?? 'http://localhost:3000',
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true); // curl/server-to-server, no browser Origin header
+      if (frontendUrl) return callback(null, origin === frontendUrl);
+      // No FRONTEND_URL configured (local dev): Next.js picks a different port
+      // whenever 3000 is busy, so pin nothing - allow any localhost origin.
+      return callback(null, /^https?:\/\/localhost:\d+$/.test(origin));
+    },
     credentials: true,
   });
 
