@@ -20,11 +20,20 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.use(cookieParser());
-  const frontendUrl = process.env.FRONTEND_URL;
+  // A trailing slash or stray whitespace in the FRONTEND_URL env var (an easy
+  // dashboard typo) used to make the exact-match check below fail silently —
+  // CORS then rejected every request from the real frontend with no hint why.
+  // Comma-separated values are also accepted, so a Vercel preview deploy can
+  // be allowed alongside the production domain.
+  const allowedOrigins = (process.env.FRONTEND_URL ?? '')
+    .split(',')
+    .map((url) => url.trim().replace(/\/+$/, ''))
+    .filter(Boolean);
   app.enableCors({
     origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
       if (!origin) return callback(null, true); // curl/server-to-server, no browser Origin header
-      if (frontendUrl && origin === frontendUrl) return callback(null, true);
+      const normalizedOrigin = origin.replace(/\/+$/, '');
+      if (allowedOrigins.includes(normalizedOrigin)) return callback(null, true);
       // Always allow any localhost port regardless of FRONTEND_URL: Next.js
       // picks a different port whenever its usual one is busy, and pinning
       // FRONTEND_URL to one exact local port breaks the moment it drifts.
