@@ -1,6 +1,7 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { AssignmentsService } from './assignments.service.js';
 import { CreateAssignmentDto } from './dto/create-assignment.dto.js';
+import { UpdateAssignmentDto } from './dto/update-assignment.dto.js';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard.js';
 import { RolesGuard } from '../common/guards/roles.guard.js';
 import { Roles } from '../common/decorators/roles.decorator.js';
@@ -27,5 +28,18 @@ export class AssignmentsController {
   @Get('assignments/:assignmentId')
   getOne(@Param('assignmentId') assignmentId: string, @CurrentUser() user: AuthenticatedUser) {
     return this.assignments.findByIdForUser(assignmentId, user);
+  }
+
+  @Patch('assignments/:assignmentId')
+  @Roles(Role.TEACHER)
+  update(@Param('assignmentId') assignmentId: string, @CurrentUser() teacher: AuthenticatedUser, @Body() dto: UpdateAssignmentDto) {
+    return this.assignments.update(assignmentId, teacher, dto);
+  }
+
+  @Delete('assignments/:assignmentId')
+  @Roles(Role.TEACHER)
+  @HttpCode(204)
+  remove(@Param('assignmentId') assignmentId: string, @CurrentUser() teacher: AuthenticatedUser) {
+    return this.assignments.remove(assignmentId, teacher);
   }
 }

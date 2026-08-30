@@ -34,6 +34,9 @@ export class Assignment {
 
   @Prop({ enum: ['draft', 'assigned', 'closed'], default: 'assigned' })
   status: 'draft' | 'assigned' | 'closed';
+
+  @Prop()
+  deletedAt?: Date;
 }
 
 export const AssignmentSchema = SchemaFactory.createForClass(Assignment);

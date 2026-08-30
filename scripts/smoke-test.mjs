@@ -194,6 +194,61 @@ async function main() {
   });
   ok("grade the online submission", onlineGrade.status === 200 && onlineGrade.body.status === "graded", onlineGrade);
 
+  // --- edit/delete assignments (PATCH/DELETE), soft delete, restrictions once graded ---
+  const editableDue = new Date(Date.now() + 7200_000).toISOString();
+  const createEditable = await call(`/classes/${classId}/assignments`, {
+    method: "POST",
+    headers: teacherAuth,
+    body: JSON.stringify({ title: "Bai tap se sua", type: "offline", dueDate: editableDue, maxScore: 10 }),
+  });
+  const editableId = createEditable.body._id;
+
+  const editUngraded = await call(`/assignments/${editableId}`, {
+    method: "PATCH",
+    headers: teacherAuth,
+    body: JSON.stringify({ title: "Bai tap da sua", maxScore: 20 }),
+  });
+  ok(
+    "edit assignment with no graded submissions (title + maxScore)",
+    editUngraded.status === 200 && editUngraded.body.title === "Bai tap da sua" && editUngraded.body.maxScore === 20,
+    editUngraded,
+  );
+
+  // "Bai tap 1" (assignmentId) already has graded submissions from earlier steps.
+  const editGradedRestricted = await call(`/assignments/${assignmentId}`, {
+    method: "PATCH",
+    headers: teacherAuth,
+    body: JSON.stringify({ maxScore: 50 }),
+  });
+  ok("editing a restricted field on a graded assignment is rejected", editGradedRestricted.status === 400, editGradedRestricted);
+
+  const editGradedDescription = await call(`/assignments/${assignmentId}`, {
+    method: "PATCH",
+    headers: teacherAuth,
+    body: JSON.stringify({ description: "Ghi chu them" }),
+  });
+  ok(
+    "description-only edit on a graded assignment still works",
+    editGradedDescription.status === 200 && editGradedDescription.body.description === "Ghi chu them",
+    editGradedDescription,
+  );
+
+  const deleteGraded = await call(`/assignments/${assignmentId}`, { method: "DELETE", headers: teacherAuth });
+  ok("deleting a graded assignment is rejected", deleteGraded.status === 400, deleteGraded);
+
+  const deleteUngraded = await call(`/assignments/${editableId}`, { method: "DELETE", headers: teacherAuth });
+  ok("soft-delete an ungraded assignment", deleteUngraded.status === 204, deleteUngraded);
+
+  const getDeleted = await call(`/assignments/${editableId}`, { headers: teacherAuth });
+  ok("soft-deleted assignment 404s afterwards", getDeleted.status === 404, getDeleted);
+
+  const listAfterDelete = await call(`/classes/${classId}/assignments`, { headers: teacherAuth });
+  ok(
+    "soft-deleted assignment no longer appears in class listing",
+    Array.isArray(listAfterDelete.body) && !listAfterDelete.body.some((a) => a._id === editableId),
+    listAfterDelete,
+  );
+
   // --- admin sees the class in the system-wide list ---
   const allClasses = await call("/admin/classes", { headers: adminAuth });
   ok("GET /admin/classes has 1 entry", Array.isArray(allClasses.body) && allClasses.body.length === 1, allClasses);

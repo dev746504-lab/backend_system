@@ -26,7 +26,7 @@ export class SubmissionsService {
       throw new BadRequestException('Bài nộp phải có nội dung hoặc file đính kèm');
     }
 
-    const assignment = await this.assignmentModel.findById(assignmentId).exec();
+    const assignment = await this.assignmentModel.findOne({ _id: assignmentId, deletedAt: null }).exec();
     if (!assignment) throw new NotFoundException('Không tìm thấy bài tập');
 
     const isLate = Date.now() > assignment.dueDate.getTime();
