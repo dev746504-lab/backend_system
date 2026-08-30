@@ -52,7 +52,7 @@ export class ClassesService {
   async findByIdForUser(classId: string, user: AuthenticatedUser) {
     const klass = await this.classModel.findById(classId).exec();
     if (!klass) throw new NotFoundException('Không tìm thấy lớp học');
-    const isOwner = user.role === Role.TEACHER && String(klass.teacherId) === user.userId;
+    const isOwner = user.isAdmin || (user.role === Role.TEACHER && String(klass.teacherId) === user.userId);
     if (!isOwner) {
       const isMember = await this.classMemberModel.exists({ classId, userId: user.userId, status: 'active' });
       if (!isMember) throw new ForbiddenException('Bạn không thuộc lớp học này');
@@ -63,10 +63,13 @@ export class ClassesService {
   /**
    * Collapses "add member" + "add to class" into one step: find-or-create the
    * user (temp password if new) and enroll them in this class in the same call.
-   * Only the owning teacher may add to their own class.
+   * The owning teacher may add to their own class; admin may add to any class
+   * (manages every class the same way a teacher manages their own).
    */
   async addMemberByEmail(classId: string, teacher: AuthenticatedUser, dto: AddClassMemberDto) {
-    const klass = await this.classModel.findOne({ _id: classId, teacherId: teacher.userId }).exec();
+    const klass = teacher.isAdmin
+      ? await this.classModel.findOne({ _id: classId }).exec()
+      : await this.classModel.findOne({ _id: classId, teacherId: teacher.userId }).exec();
     if (!klass) throw new NotFoundException('Không tìm thấy lớp học hoặc bạn không phụ trách lớp này');
 
     const session = await this.connection.startSession();

@@ -151,6 +151,22 @@ async function main() {
   const allClasses = await call("/admin/classes", { headers: adminAuth });
   ok("GET /admin/classes has 1 entry", Array.isArray(allClasses.body) && allClasses.body.length === 1, allClasses);
 
+  // --- admin manages a class it doesn't own, same as the owning teacher ---
+  const adminAddsStudent = await call(`/classes/${classId}/members`, {
+    method: "POST",
+    headers: adminAuth,
+    body: JSON.stringify({ email: "student2@truongabc.vn", fullName: "Hoc Sinh D", role: "student" }),
+  });
+  ok("admin adds a student to a class it doesn't own", adminAddsStudent.status === 201 || adminAddsStudent.status === 200, adminAddsStudent);
+  const student2Id = adminAddsStudent.body.userId;
+
+  const adminGrades = await call(`/assignments/${assignmentId}/students/${student2Id}/grade`, {
+    method: "PATCH",
+    headers: adminAuth,
+    body: JSON.stringify({ score: 7, feedback: "Kha" }),
+  });
+  ok("admin grades in a class it doesn't own", adminGrades.status === 200 && adminGrades.body.status === "graded", adminGrades);
+
   // --- notifications: teacher sends to their class, admin sends system-wide, student sees both ---
   const classNotif = await call("/notifications", {
     method: "POST",

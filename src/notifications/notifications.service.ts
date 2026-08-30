@@ -20,7 +20,8 @@ export class NotificationsService {
     }
     if (dto.scope === 'class') {
       if (!dto.classId) throw new BadRequestException('Thiếu classId cho thông báo theo lớp');
-      const isTeacher = await this.classMemberModel.exists({ classId: dto.classId, userId: sender.userId, role: 'teacher', status: 'active' });
+      const isTeacher =
+        sender.isAdmin || (await this.classMemberModel.exists({ classId: dto.classId, userId: sender.userId, role: 'teacher', status: 'active' }));
       if (!isTeacher) throw new ForbiddenException('Bạn không phụ trách lớp này');
     }
 

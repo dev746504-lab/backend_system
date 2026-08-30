@@ -90,7 +90,10 @@ export class SubmissionsService {
 
         const assignment = await this.assignmentModel.findById(submission.assignmentId).session(session);
         if (!assignment) throw new NotFoundException('Không tìm thấy bài tập');
-        if (String(assignment.teacherId) !== grader.userId) {
+        const canGrade =
+          grader.isAdmin ||
+          (await this.classMemberModel.exists({ classId: assignment.classId, userId: grader.userId, role: 'teacher', status: 'active' }).session(session));
+        if (!canGrade) {
           throw new ForbiddenException('Chỉ giáo viên phụ trách mới được chấm bài này');
         }
 
@@ -123,7 +126,10 @@ export class SubmissionsService {
       await session.withTransaction(async () => {
         const assignment = await this.assignmentModel.findById(assignmentId).session(session);
         if (!assignment) throw new NotFoundException('Không tìm thấy bài tập');
-        if (String(assignment.teacherId) !== grader.userId) {
+        const canGrade =
+          grader.isAdmin ||
+          (await this.classMemberModel.exists({ classId: assignment.classId, userId: grader.userId, role: 'teacher', status: 'active' }).session(session));
+        if (!canGrade) {
           throw new ForbiddenException('Chỉ giáo viên phụ trách mới được chấm bài này');
         }
 

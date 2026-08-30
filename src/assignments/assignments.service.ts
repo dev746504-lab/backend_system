@@ -15,7 +15,8 @@ export class AssignmentsService {
   ) {}
 
   async create(classId: string, teacher: AuthenticatedUser, dto: CreateAssignmentDto) {
-    const isTeacher = await this.classMemberModel.exists({ classId, userId: teacher.userId, role: 'teacher', status: 'active' });
+    const isTeacher =
+      teacher.isAdmin || (await this.classMemberModel.exists({ classId, userId: teacher.userId, role: 'teacher', status: 'active' }));
     if (!isTeacher) throw new ForbiddenException('Bạn không phụ trách lớp này');
 
     // Ràng buộc nghiệp vụ được lặp lại ở đây (thay vì chỉ nằm trong schema pre-validate)
