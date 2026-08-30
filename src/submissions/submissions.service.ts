@@ -22,6 +22,10 @@ export class SubmissionsService {
 
   /** Upsert theo (assignmentId, studentId) — nộp lại chỉ ghi đè, không tạo bản ghi trùng. */
   async submit(assignmentId: string, student: AuthenticatedUser, dto: SubmitAssignmentDto) {
+    if (!dto.textContent?.trim() && !dto.fileUrls?.length) {
+      throw new BadRequestException('Bài nộp phải có nội dung hoặc file đính kèm');
+    }
+
     const assignment = await this.assignmentModel.findById(assignmentId).exec();
     if (!assignment) throw new NotFoundException('Không tìm thấy bài tập');
 

@@ -16,6 +16,7 @@ import { SubmissionsModule } from './submissions/submissions.module.js';
 import { NotificationsModule } from './notifications/notifications.module.js';
 import { ReportsModule } from './reports/reports.module.js';
 import { AuditModule } from './audit/audit.module.js';
+import { UploadsModule } from './uploads/uploads.module.js';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { AuditModule } from './audit/audit.module.js';
     NotificationsModule,
     ReportsModule,
     AuditModule,
+    UploadsModule,
   ],
   controllers: [HealthController],
 })

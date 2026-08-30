@@ -157,12 +157,31 @@ async function main() {
   ok("create online assignment without examId", createOnline.status === 201 || createOnline.status === 200, createOnline);
   const onlineAssignmentId = createOnline.body._id;
 
+  const emptySubmit = await call(`/assignments/${onlineAssignmentId}/submissions`, {
+    method: "POST",
+    headers: studentAuth,
+    body: JSON.stringify({}),
+  });
+  ok("empty submission (no text, no files) rejected", emptySubmit.status === 400, emptySubmit);
+
   const onlineSubmit = await call(`/assignments/${onlineAssignmentId}/submissions`, {
     method: "POST",
     headers: studentAuth,
     body: JSON.stringify({ textContent: "Day la bai lam cua em." }),
   });
   ok("student submits free-text answer", onlineSubmit.status === 201 || onlineSubmit.status === 200, onlineSubmit);
+
+  const uploadSig = await call("/uploads/signature", { method: "POST", headers: studentAuth });
+  ok(
+    "student can get a Cloudinary upload signature",
+    uploadSig.status === 201 || uploadSig.status === 200,
+    { ...uploadSig, body: { ...uploadSig.body, signature: uploadSig.body?.signature ? "[present]" : uploadSig.body?.signature } },
+  );
+  ok(
+    "upload signature has the expected shape",
+    !!uploadSig.body?.cloudName && !!uploadSig.body?.apiKey && !!uploadSig.body?.signature && !!uploadSig.body?.timestamp,
+    uploadSig,
+  );
 
   const onlineRoster = await call(`/assignments/${onlineAssignmentId}/submissions`, { headers: teacherAuth });
   const onlineRow = onlineRoster.body?.find?.((s) => s.studentId._id === studentId);
