@@ -319,6 +319,138 @@ async function main() {
     studentListAfterClose,
   );
 
+  // --- deadline enforcement: allowLateSubmission, lateSubmissionDeadline ---
+  const dueSoon = new Date(Date.now() + 1200).toISOString();
+
+  const createHardDeadline = await call(`/classes/${classId}/assignments`, {
+    method: "POST",
+    headers: teacherAuth,
+    body: JSON.stringify({ title: "Bai tap khong cho nop muon", type: "online", dueDate: dueSoon, maxScore: 10, allowLateSubmission: false }),
+  });
+  ok(
+    "create assignment with allowLateSubmission=false",
+    createHardDeadline.status === 201 && createHardDeadline.body.allowLateSubmission === false,
+    createHardDeadline,
+  );
+  const hardDeadlineId = createHardDeadline.body._id;
+
+  const softLateDeadline = new Date(Date.now() + 2500).toISOString();
+  const createSoftDeadline = await call(`/classes/${classId}/assignments`, {
+    method: "POST",
+    headers: teacherAuth,
+    body: JSON.stringify({ title: "Bai tap cho nop muon co han", type: "online", dueDate: dueSoon, maxScore: 10, lateSubmissionDeadline: softLateDeadline }),
+  });
+  ok(
+    "create assignment with a lateSubmissionDeadline",
+    createSoftDeadline.status === 201 && !!createSoftDeadline.body.lateSubmissionDeadline,
+    createSoftDeadline,
+  );
+  const softDeadlineId = createSoftDeadline.body._id;
+
+  const createShortWindow = await call(`/classes/${classId}/assignments`, {
+    method: "POST",
+    headers: teacherAuth,
+    body: JSON.stringify({
+      title: "Bai tap cua so nop muon rat ngan",
+      type: "online",
+      dueDate: new Date(Date.now() + 300).toISOString(),
+      maxScore: 10,
+      lateSubmissionDeadline: new Date(Date.now() + 700).toISOString(),
+    }),
+  });
+  ok("create assignment with a short late window", createShortWindow.status === 201, createShortWindow);
+  const shortWindowId = createShortWindow.body._id;
+
+  const rejectDeadlineBeforeDue = await call(`/classes/${classId}/assignments`, {
+    method: "POST",
+    headers: teacherAuth,
+    body: JSON.stringify({ title: "x", type: "online", dueDate: dueSoon, maxScore: 10, lateSubmissionDeadline: dueSoon }),
+  });
+  ok("lateSubmissionDeadline not after dueDate is rejected", rejectDeadlineBeforeDue.status === 400, rejectDeadlineBeforeDue);
+
+  const rejectDeadlineWithoutAllow = await call(`/classes/${classId}/assignments`, {
+    method: "POST",
+    headers: teacherAuth,
+    body: JSON.stringify({
+      title: "x",
+      type: "online",
+      dueDate: dueSoon,
+      maxScore: 10,
+      allowLateSubmission: false,
+      lateSubmissionDeadline: softLateDeadline,
+    }),
+  });
+  ok("lateSubmissionDeadline with allowLateSubmission=false is rejected", rejectDeadlineWithoutAllow.status === 400, rejectDeadlineWithoutAllow);
+
+  const editRestrictedLateConfig = await call(`/assignments/${assignmentId}`, {
+    method: "PATCH",
+    headers: teacherAuth,
+    body: JSON.stringify({ allowLateSubmission: false }),
+  });
+  ok(
+    "editing allowLateSubmission on a graded assignment is rejected",
+    editRestrictedLateConfig.status === 400,
+    editRestrictedLateConfig,
+  );
+
+  // Separate assignment, untouched by the timing tests below, just to exercise
+  // clearing lateSubmissionDeadline via PATCH { lateSubmissionDeadline: null }.
+  const createForClearTest = await call(`/classes/${classId}/assignments`, {
+    method: "POST",
+    headers: teacherAuth,
+    body: JSON.stringify({ title: "Bai tap test clear deadline", type: "online", dueDate: dueSoon, maxScore: 10, lateSubmissionDeadline: softLateDeadline }),
+  });
+  const clearTestId = createForClearTest.body._id;
+
+  const disableWithoutClearing = await call(`/assignments/${clearTestId}`, {
+    method: "PATCH",
+    headers: teacherAuth,
+    body: JSON.stringify({ allowLateSubmission: false }),
+  });
+  ok(
+    "disabling allowLateSubmission while a deadline is still set is rejected",
+    disableWithoutClearing.status === 400,
+    disableWithoutClearing,
+  );
+
+  const disableAndClear = await call(`/assignments/${clearTestId}`, {
+    method: "PATCH",
+    headers: teacherAuth,
+    body: JSON.stringify({ allowLateSubmission: false, lateSubmissionDeadline: null }),
+  });
+  ok(
+    "disabling allowLateSubmission together with clearing the deadline succeeds",
+    disableAndClear.status === 200 && disableAndClear.body.allowLateSubmission === false && !disableAndClear.body.lateSubmissionDeadline,
+    disableAndClear,
+  );
+
+  await new Promise((r) => setTimeout(r, 1500)); // let dueSoon (and the short window) pass
+
+  const submitAfterHardDeadline = await call(`/assignments/${hardDeadlineId}/submissions`, {
+    method: "POST",
+    headers: studentAuth,
+    body: JSON.stringify({ textContent: "qua han" }),
+  });
+  ok("submitting late when allowLateSubmission=false is rejected", submitAfterHardDeadline.status === 400, submitAfterHardDeadline);
+
+  const submitWithinLateWindow = await call(`/assignments/${softDeadlineId}/submissions`, {
+    method: "POST",
+    headers: studentAuth,
+    body: JSON.stringify({ textContent: "nop muon nhung con trong han" }),
+  });
+  ok(
+    "submitting late but within lateSubmissionDeadline succeeds",
+    submitWithinLateWindow.status === 201 && submitWithinLateWindow.body.status === "late",
+    submitWithinLateWindow,
+  );
+
+  const submitPastLateWindow = await call(`/assignments/${shortWindowId}/submissions`, {
+    method: "POST",
+    headers: studentAuth,
+    body: JSON.stringify({ textContent: "qua ca han nop muon" }),
+  });
+  ok("submitting past the lateSubmissionDeadline is rejected", submitPastLateWindow.status === 400, submitPastLateWindow);
+
   // --- admin sees the class in the system-wide list ---
   const allClasses = await call("/admin/classes", { headers: adminAuth });
   ok("GET /admin/classes has 1 entry", Array.isArray(allClasses.body) && allClasses.body.length === 1, allClasses);

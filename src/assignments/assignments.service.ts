@@ -27,16 +27,34 @@ export class AssignmentsService {
     // examId là tuỳ chọn: "online" nghĩa là học sinh nộp bài làm dạng văn bản
     // qua app (khác "offline" - làm ngoài app, giáo viên chấm tay) - không bắt
     // buộc phải gắn đề thi trắc nghiệm (chưa có giao diện tạo đề thi).
-    if (new Date(dto.dueDate).getTime() <= Date.now()) {
+    const dueDate = new Date(dto.dueDate);
+    if (dueDate.getTime() <= Date.now()) {
       throw new BadRequestException('Hạn nộp phải ở tương lai');
     }
+
+    const allowLateSubmission = dto.allowLateSubmission ?? true;
+    const lateSubmissionDeadline = dto.lateSubmissionDeadline ? new Date(dto.lateSubmissionDeadline) : undefined;
+    this.validateLateSubmissionConfig(dueDate, allowLateSubmission, lateSubmissionDeadline);
 
     return this.assignmentModel.create({
       classId,
       teacherId: teacher.userId,
       ...dto,
-      dueDate: new Date(dto.dueDate),
+      dueDate,
+      allowLateSubmission,
+      lateSubmissionDeadline,
     });
+  }
+
+  /** Dùng chung cho create()/update(): hạn nộp muộn (nếu có) phải sau hạn chính thức, và chỉ có ý nghĩa khi cho phép nộp muộn. */
+  private validateLateSubmissionConfig(dueDate: Date, allowLateSubmission: boolean, lateSubmissionDeadline?: Date) {
+    if (!lateSubmissionDeadline) return;
+    if (!allowLateSubmission) {
+      throw new BadRequestException('Không thể đặt hạn nộp muộn khi không cho phép nộp muộn');
+    }
+    if (lateSubmissionDeadline.getTime() <= dueDate.getTime()) {
+      throw new BadRequestException('Hạn nộp muộn phải sau hạn nộp chính thức');
+    }
   }
 
   async listForClass(classId: string, user: AuthenticatedUser) {
@@ -104,11 +122,20 @@ export class AssignmentsService {
     const assignment = await this.findEditable(assignmentId, teacher);
 
     // Đã có bài chấm rồi thì không cho đổi các field ảnh hưởng tới cách chấm/nộp
-    // (type, dueDate, maxScore, examId, tài liệu đính kèm) để tránh lệch dữ liệu
-    // điểm đã chốt — chỉ còn sửa được mô tả.
+    // (type, dueDate, maxScore, examId, tài liệu đính kèm, cấu hình nộp muộn) để
+    // tránh lệch dữ liệu điểm đã chốt — chỉ còn sửa được mô tả.
     const hasGraded = await this.submissionModel.exists({ assignmentId, status: 'graded' });
     if (hasGraded) {
-      const restrictedFields = ['title', 'type', 'examId', 'attachedMaterialIds', 'dueDate', 'maxScore'] as const;
+      const restrictedFields = [
+        'title',
+        'type',
+        'examId',
+        'attachedMaterialIds',
+        'dueDate',
+        'maxScore',
+        'allowLateSubmission',
+        'lateSubmissionDeadline',
+      ] as const;
       const attemptedRestricted = restrictedFields.filter((f) => dto[f] !== undefined);
       if (attemptedRestricted.length) {
         throw new BadRequestException('Bài tập đã có điểm chấm, chỉ được sửa mô tả');
@@ -121,6 +148,14 @@ export class AssignmentsService {
       throw new BadRequestException('Hạn nộp phải ở tương lai');
     }
 
+    const effectiveDueDate = dto.dueDate !== undefined ? new Date(dto.dueDate) : assignment.dueDate;
+    const effectiveAllowLate = dto.allowLateSubmission !== undefined ? dto.allowLateSubmission : assignment.allowLateSubmission;
+    const effectiveLateDeadline =
+      dto.lateSubmissionDeadline !== undefined
+        ? (dto.lateSubmissionDeadline ? new Date(dto.lateSubmissionDeadline) : undefined)
+        : assignment.lateSubmissionDeadline;
+    this.validateLateSubmissionConfig(effectiveDueDate, effectiveAllowLate, effectiveLateDeadline);
+
     if (dto.title !== undefined) assignment.title = dto.title;
     if (dto.description !== undefined) assignment.description = dto.description;
     if (dto.type !== undefined) assignment.type = dto.type;
@@ -128,6 +163,10 @@ export class AssignmentsService {
     if (dto.attachedMaterialIds !== undefined) assignment.attachedMaterialIds = dto.attachedMaterialIds.map((id) => new Types.ObjectId(id));
     if (dto.dueDate !== undefined) assignment.dueDate = new Date(dto.dueDate);
     if (dto.maxScore !== undefined) assignment.maxScore = dto.maxScore;
+    if (dto.allowLateSubmission !== undefined) assignment.allowLateSubmission = dto.allowLateSubmission;
+    if (dto.lateSubmissionDeadline !== undefined) {
+      assignment.lateSubmissionDeadline = dto.lateSubmissionDeadline ? new Date(dto.lateSubmissionDeadline) : undefined;
+    }
 
     return assignment.save();
   }

@@ -35,6 +35,13 @@ export class Assignment {
   @Prop({ enum: ['draft', 'assigned', 'closed'], default: 'assigned' })
   status: 'draft' | 'assigned' | 'closed';
 
+  @Prop({ default: true })
+  allowLateSubmission: boolean;
+
+  /** Chỉ có ý nghĩa khi allowLateSubmission=true - mốc cứng, quá giờ này thì nộp muộn cũng không được nữa. */
+  @Prop()
+  lateSubmissionDeadline?: Date;
+
   @Prop()
   deletedAt?: Date;
 }

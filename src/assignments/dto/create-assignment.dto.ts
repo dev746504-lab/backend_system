@@ -1,4 +1,4 @@
-import { ArrayMaxSize, IsArray, IsDateString, IsEnum, IsInt, IsMongoId, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
+import { ArrayMaxSize, IsArray, IsBoolean, IsDateString, IsEnum, IsInt, IsMongoId, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
 
 export class CreateAssignmentDto {
   @IsString() @MaxLength(200)
@@ -25,4 +25,11 @@ export class CreateAssignmentDto {
   /** Không nhận 'closed' ở đây - việc đóng bài tập chỉ đi qua endpoint publish/close riêng. */
   @IsOptional() @IsEnum(['draft', 'assigned'])
   status?: 'draft' | 'assigned';
+
+  @IsOptional() @IsBoolean()
+  allowLateSubmission?: boolean;
+
+  /** Chỉ hợp lệ khi allowLateSubmission !== false, và phải sau dueDate. */
+  @IsOptional() @IsDateString()
+  lateSubmissionDeadline?: string;
 }

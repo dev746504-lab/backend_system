@@ -33,6 +33,15 @@ export class SubmissionsService {
     }
 
     const isLate = Date.now() > assignment.dueDate.getTime();
+    if (isLate) {
+      if (!assignment.allowLateSubmission) {
+        throw new BadRequestException('Đã quá hạn nộp, bài tập này không cho phép nộp muộn');
+      }
+      if (assignment.lateSubmissionDeadline && Date.now() > assignment.lateSubmissionDeadline.getTime()) {
+        throw new BadRequestException('Đã quá hạn nộp muộn cho phép');
+      }
+    }
+
     return this.submissionModel.findOneAndUpdate(
       { assignmentId, studentId: student.userId },
       {
