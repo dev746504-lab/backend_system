@@ -5,9 +5,6 @@ export type QuestionDocument = HydratedDocument<Question>;
 
 @Schema({ timestamps: true })
 export class Question {
-  @Prop({ type: SchemaTypes.ObjectId, ref: 'Institution', required: true, index: true })
-  institutionId: Types.ObjectId;
-
   @Prop({ type: SchemaTypes.ObjectId, ref: 'User', required: true })
   ownerId: Types.ObjectId;
 
@@ -41,4 +38,4 @@ export class Question {
 }
 
 export const QuestionSchema = SchemaFactory.createForClass(Question);
-QuestionSchema.index({ institutionId: 1, subject: 1, topic: 1 });
+QuestionSchema.index({ subject: 1, topic: 1 });

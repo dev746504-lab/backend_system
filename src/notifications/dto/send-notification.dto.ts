@@ -1,8 +1,8 @@
 import { IsEnum, IsMongoId, IsOptional, IsString, MaxLength } from 'class-validator';
 
 export class SendNotificationDto {
-  @IsEnum(['institution', 'class', 'user'])
-  scope: 'institution' | 'class' | 'user';
+  @IsEnum(['system', 'class', 'user'])
+  scope: 'system' | 'class' | 'user';
 
   @IsOptional() @IsMongoId()
   classId?: string;

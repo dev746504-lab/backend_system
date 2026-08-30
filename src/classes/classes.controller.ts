@@ -4,40 +4,39 @@ import { CreateClassDto } from './dto/create-class.dto.js';
 import { AddClassMemberDto } from './dto/add-class-member.dto.js';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard.js';
 import { RolesGuard } from '../common/guards/roles.guard.js';
-import { TenantGuard } from '../common/guards/tenant.guard.js';
 import { Roles } from '../common/decorators/roles.decorator.js';
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import { Role } from '../common/enums/role.enum.js';
 import type { AuthenticatedUser } from '../common/types/authenticated-user.js';
 
-@Controller()
-@UseGuards(JwtAuthGuard, RolesGuard, TenantGuard)
+@Controller('classes')
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class ClassesController {
   constructor(private readonly classes: ClassesService) {}
 
-  @Post('institutions/:institutionId/classes')
+  @Post()
   @Roles(Role.TEACHER)
-  create(@Param('institutionId') institutionId: string, @CurrentUser() teacher: AuthenticatedUser, @Body() dto: CreateClassDto) {
-    return this.classes.create(institutionId, teacher.userId, dto);
+  create(@CurrentUser() teacher: AuthenticatedUser, @Body() dto: CreateClassDto) {
+    return this.classes.create(teacher.userId, dto);
   }
 
-  @Get('institutions/:institutionId/classes')
-  list(@Param('institutionId') institutionId: string, @CurrentUser() user: AuthenticatedUser) {
-    return this.classes.listForUser(institutionId, user);
+  @Get()
+  list(@CurrentUser() user: AuthenticatedUser) {
+    return this.classes.listForUser(user);
   }
 
-  @Get('classes/:classId')
+  @Get(':classId')
   getOne(@Param('classId') classId: string, @CurrentUser() user: AuthenticatedUser) {
     return this.classes.findByIdForUser(classId, user);
   }
 
-  @Post('classes/:classId/members')
+  @Post(':classId/members')
   @Roles(Role.TEACHER)
-  addMember(@Param('classId') classId: string, @CurrentUser() user: AuthenticatedUser, @Body() dto: AddClassMemberDto) {
-    return this.classes.addMember(classId, user.institutionId!, dto);
+  addMember(@Param('classId') classId: string, @CurrentUser() teacher: AuthenticatedUser, @Body() dto: AddClassMemberDto) {
+    return this.classes.addMemberByEmail(classId, teacher, dto);
   }
 
-  @Get('classes/:classId/members')
+  @Get(':classId/members')
   listMembers(@Param('classId') classId: string) {
     return this.classes.listMembers(classId);
   }

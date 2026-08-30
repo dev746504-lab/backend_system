@@ -6,8 +6,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { AuthModule } from './auth/auth.module.js';
 import { GlobalAuthModule } from './auth/global-auth.module.js';
 import { UsersModule } from './users/users.module.js';
-import { InstitutionsModule } from './institutions/institutions.module.js';
-import { MembershipsModule } from './memberships/memberships.module.js';
+import { AdminModule } from './admin/admin.module.js';
 import { ClassesModule } from './classes/classes.module.js';
 import { MaterialsModule } from './materials/materials.module.js';
 import { QuestionBankModule } from './question-bank/question-bank.module.js';
@@ -31,8 +30,7 @@ import { AuditModule } from './audit/audit.module.js';
     GlobalAuthModule,
     AuthModule,
     UsersModule,
-    InstitutionsModule,
-    MembershipsModule,
+    AdminModule,
     ClassesModule,
     MaterialsModule,
     QuestionBankModule,

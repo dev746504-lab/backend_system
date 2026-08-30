@@ -6,9 +6,6 @@ export type AuditLogDocument = HydratedDocument<AuditLog>;
 /** Append-only: no service in this codebase should ever update or delete an AuditLog document. */
 @Schema({ timestamps: { createdAt: true, updatedAt: false } })
 export class AuditLog {
-  @Prop({ type: SchemaTypes.ObjectId, ref: 'Institution', index: true })
-  institutionId?: Types.ObjectId;
-
   @Prop({ type: SchemaTypes.ObjectId, ref: 'User', required: true })
   userId: Types.ObjectId;
 
@@ -26,4 +23,4 @@ export class AuditLog {
 }
 
 export const AuditLogSchema = SchemaFactory.createForClass(AuditLog);
-AuditLogSchema.index({ institutionId: 1, createdAt: -1 });
+AuditLogSchema.index({ userId: 1, createdAt: -1 });

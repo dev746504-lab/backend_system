@@ -8,7 +8,6 @@ export class AuditService {
   constructor(@InjectModel(AuditLog.name) private readonly auditModel: Model<AuditLogDocument>) {}
 
   async record(entry: {
-    institutionId?: Types.ObjectId | string;
     userId: Types.ObjectId | string;
     action: string;
     resourceType: string;
@@ -19,7 +18,6 @@ export class AuditService {
     await this.auditModel.create(
       [
         {
-          institutionId: entry.institutionId,
           userId: entry.userId,
           action: entry.action,
           resourceType: entry.resourceType,

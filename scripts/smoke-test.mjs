@@ -45,17 +45,18 @@ async function main() {
   await import("../dist/main.js");
   await new Promise((r) => setTimeout(r, 800)); // let Nest finish listening
 
-  // --- seed a system_admin directly (this role never self-registers) ---
+  // --- seed the one admin account directly (this flag never self-registers) ---
   // Uses its own Connection instance — NOT mongoose.connect()/disconnect(),
   // which would tear down the shared default connection the running app relies on.
   const seedDb = await mongoose.createConnection(uri).asPromise();
-  const passwordHash = await argon2.hash("SysAdmin123!");
+  const adminHash = await argon2.hash("AdminPass123!");
   await seedDb.collection("users").insertOne({
     email: "admin@lms.vn",
-    passwordHash,
-    fullName: "System Admin",
+    passwordHash: adminHash,
+    fullName: "Admin",
+    role: "teacher",
+    isAdmin: true,
     status: "active",
-    isSystemAdmin: true,
     emailVerified: true,
     createdAt: new Date(),
     updatedAt: new Date(),
@@ -66,90 +67,62 @@ async function main() {
   const health = await call("/health");
   ok("GET /health", health.status === 200, health);
 
-  // --- CSGD self-registration (transaction: user + institution + membership) ---
-  const reg = await call("/auth/register-institution", {
+  // --- admin logs in, creates a teacher ---
+  const adminLogin = await call("/auth/login", { method: "POST", body: JSON.stringify({ email: "admin@lms.vn", password: "AdminPass123!" }) });
+  ok("admin login", adminLogin.status === 200 && adminLogin.body.user.isAdmin === true, adminLogin);
+  const adminAuth = { Authorization: `Bearer ${adminLogin.body.accessToken}` };
+
+  const createTeacher = await call("/admin/teachers", {
     method: "POST",
-    body: JSON.stringify({
-      fullName: "Nguyen Van A",
-      email: "admin@truongabc.vn",
-      password: "MatKhau123!",
-      institutionName: "Truong ABC",
-      institutionCode: "truong-abc",
-    }),
+    headers: adminAuth,
+    body: JSON.stringify({ email: "teacher@truongabc.vn", fullName: "Co Giao B" }),
   });
-  ok("POST /auth/register-institution", reg.status === 201 || reg.status === 200, reg);
+  ok("admin creates teacher", createTeacher.status === 201 || createTeacher.status === 200, createTeacher);
 
-  // --- system_admin logs in and approves the institution ---
-  const sysLogin = await call("/auth/login", { method: "POST", body: JSON.stringify({ email: "admin@lms.vn", password: "SysAdmin123!" }) });
-  ok("system_admin login", sysLogin.status === 200 && sysLogin.body.user.role === "system_admin", sysLogin);
-  const sysToken = sysLogin.body.accessToken;
+  // 2, not 1: the admin account is itself role:"teacher" too (isAdmin is an
+  // extra flag on top, not a separate role).
+  const listTeachers = await call("/admin/teachers", { headers: adminAuth });
+  ok("GET /admin/teachers has 2 entries (admin + new teacher)", Array.isArray(listTeachers.body) && listTeachers.body.length === 2, listTeachers);
 
-  const pending = await call("/institutions/pending", { headers: { Authorization: `Bearer ${sysToken}` } });
-  ok("GET /institutions/pending has 1 entry", Array.isArray(pending.body) && pending.body.length === 1, pending);
-  const institutionId = pending.body[0]._id;
-
-  const approve = await call(`/institutions/${institutionId}/approve`, { method: "PATCH", headers: { Authorization: `Bearer ${sysToken}` } });
-  ok("PATCH /institutions/:id/approve", approve.status === 200 && approve.body.status === "active", approve);
-
-  // --- the registering teacher (top authority in this CSGD) logs in, adds a teacher + student, creates a class ---
-  const adminLogin = await call("/auth/login", { method: "POST", body: JSON.stringify({ email: "admin@truongabc.vn", password: "MatKhau123!" }) });
-  ok("registering teacher login", adminLogin.status === 200 && adminLogin.body.user.role === "teacher", adminLogin);
-  const adminToken = adminLogin.body.accessToken;
-  const auth = { Authorization: `Bearer ${adminToken}` };
-
-  const addTeacher = await call(`/institutions/${institutionId}/members`, {
-    method: "POST",
-    headers: auth,
-    body: JSON.stringify({ email: "teacher@truongabc.vn", fullName: "Co Giao B", role: "teacher" }),
-  });
-  ok("addMember teacher", addTeacher.status === 201 || addTeacher.status === 200, addTeacher);
-
-  const addStudent = await call(`/institutions/${institutionId}/members`, {
-    method: "POST",
-    headers: auth,
-    body: JSON.stringify({ email: "student@truongabc.vn", fullName: "Hoc Sinh C", role: "student" }),
-  });
-  ok("addMember student", addStudent.status === 201 || addStudent.status === 200, addStudent);
-
-  const createClass = await call(`/institutions/${institutionId}/classes`, {
-    method: "POST",
-    headers: auth,
-    body: JSON.stringify({ name: "Toan 5A", subject: "Toan", academicYear: "2026-2027" }),
-  });
-  ok("create class", createClass.status === 201 || createClass.status === 200, createClass);
-  const classId = createClass.body._id;
-
-  // --- reset passwords for the invited teacher/student (they got random temp ones) ---
+  // --- reset the temp password for the invited teacher (it got a random one) ---
   const seedDb2 = await mongoose.createConnection(uri).asPromise();
   const teacherHash = await argon2.hash("Teacher123!");
-  const studentHash = await argon2.hash("Student123!");
   await seedDb2.collection("users").updateOne({ email: "teacher@truongabc.vn" }, { $set: { passwordHash: teacherHash } });
-  await seedDb2.collection("users").updateOne({ email: "student@truongabc.vn" }, { $set: { passwordHash: studentHash } });
   await seedDb2.close();
 
   const teacherLogin = await call("/auth/login", { method: "POST", body: JSON.stringify({ email: "teacher@truongabc.vn", password: "Teacher123!" }) });
-  ok("teacher login", teacherLogin.status === 200, teacherLogin);
+  ok("teacher login", teacherLogin.status === 200 && teacherLogin.body.user.role === "teacher" && teacherLogin.body.user.isAdmin === false, teacherLogin);
   const teacherAuth = { Authorization: `Bearer ${teacherLogin.body.accessToken}` };
 
+  // --- teacher creates a class, adds a student directly (single call) ---
+  const createClass = await call("/classes", {
+    method: "POST",
+    headers: teacherAuth,
+    body: JSON.stringify({ name: "Toan 5A", subject: "Toan", academicYear: "2026-2027" }),
+  });
+  ok("teacher creates class", createClass.status === 201 || createClass.status === 200, createClass);
+  const classId = createClass.body._id;
+
+  const listMyClasses = await call("/classes", { headers: teacherAuth });
+  ok("teacher sees own class in GET /classes", Array.isArray(listMyClasses.body) && listMyClasses.body.length === 1, listMyClasses);
+
+  const addStudent = await call(`/classes/${classId}/members`, {
+    method: "POST",
+    headers: teacherAuth,
+    body: JSON.stringify({ email: "student@truongabc.vn", fullName: "Hoc Sinh C", role: "student" }),
+  });
+  ok("teacher adds student directly to class", addStudent.status === 201 || addStudent.status === 200, addStudent);
+
+  const seedDb3 = await mongoose.createConnection(uri).asPromise();
+  const studentHash = await argon2.hash("Student123!");
+  await seedDb3.collection("users").updateOne({ email: "student@truongabc.vn" }, { $set: { passwordHash: studentHash } });
+  await seedDb3.close();
+
   const studentLogin = await call("/auth/login", { method: "POST", body: JSON.stringify({ email: "student@truongabc.vn", password: "Student123!" }) });
-  ok("student login", studentLogin.status === 200, studentLogin);
+  ok("student login", studentLogin.status === 200 && studentLogin.body.user.role === "student", studentLogin);
   const studentAuth = { Authorization: `Bearer ${studentLogin.body.accessToken}` };
 
-  const addClassMemberT = await call(`/classes/${classId}/members`, {
-    method: "POST",
-    headers: auth,
-    body: JSON.stringify({ userId: teacherLogin.body.user.id, role: "teacher" }),
-  });
-  ok("add teacher to class", addClassMemberT.status === 201 || addClassMemberT.status === 200, addClassMemberT);
-
-  const addClassMemberS = await call(`/classes/${classId}/members`, {
-    method: "POST",
-    headers: auth,
-    body: JSON.stringify({ userId: studentLogin.body.user.id, role: "student" }),
-  });
-  ok("add student to class", addClassMemberS.status === 201 || addClassMemberS.status === 200, addClassMemberS);
-
-  // --- teacher creates an offline assignment, student submits, teacher grades (transaction) ---
+  // --- teacher creates an offline assignment, grades the student directly (no prior submission) ---
   const dueDate = new Date(Date.now() + 3600_000).toISOString();
   const createAssignment = await call(`/classes/${classId}/assignments`, {
     method: "POST",
@@ -159,37 +132,49 @@ async function main() {
   ok("create assignment", createAssignment.status === 201 || createAssignment.status === 200, createAssignment);
   const assignmentId = createAssignment.body._id;
 
-  const submit = await call(`/assignments/${assignmentId}/submissions`, {
-    method: "POST",
-    headers: studentAuth,
-    body: JSON.stringify({ textContent: "Bai lam cua em" }),
-  });
-  ok("student submit", submit.status === 201 || submit.status === 200, submit);
-  const submissionId = submit.body._id;
-
-  const grade = await call(`/submissions/${submissionId}/grade`, {
+  const studentId = studentLogin.body.user.id;
+  const grade = await call(`/assignments/${assignmentId}/students/${studentId}/grade`, {
     method: "PATCH",
     headers: teacherAuth,
     body: JSON.stringify({ score: 9, feedback: "Tot lam" }),
   });
-  ok("grade submission (transaction)", grade.status === 200 && grade.body.status === "graded", grade);
+  ok("grade offline assignment directly (transaction)", grade.status === 200 && grade.body.status === "graded", grade);
 
-  const progress = await call(`/students/${studentLogin.body.user.id}/progress`, { headers: studentAuth });
+  const progress = await call(`/students/${studentId}/progress`, { headers: studentAuth });
   ok(
     "student_progress recomputed",
     progress.status === 200 && progress.body[0]?.completedCount === 1 && progress.body[0]?.avgScore === 9,
     progress,
   );
 
-  const notif = await call("/notifications", {
+  // --- admin sees the class in the system-wide list ---
+  const allClasses = await call("/admin/classes", { headers: adminAuth });
+  ok("GET /admin/classes has 1 entry", Array.isArray(allClasses.body) && allClasses.body.length === 1, allClasses);
+
+  // --- notifications: teacher sends to their class, admin sends system-wide, student sees both ---
+  const classNotif = await call("/notifications", {
     method: "POST",
-    headers: auth,
-    body: JSON.stringify({ scope: "institution", title: "Chao mung", content: "Nam hoc moi bat dau" }),
+    headers: teacherAuth,
+    body: JSON.stringify({ scope: "class", classId, title: "Nhac lop", content: "Nop bai dung han" }),
   });
-  ok("send institution notification", notif.status === 201 || notif.status === 200, notif);
+  ok("teacher sends class notification", classNotif.status === 201 || classNotif.status === 200, classNotif);
+
+  const teacherSystemAttempt = await call("/notifications", {
+    method: "POST",
+    headers: teacherAuth,
+    body: JSON.stringify({ scope: "system", title: "x", content: "x" }),
+  });
+  ok("non-admin teacher cannot send system notification", teacherSystemAttempt.status === 403, teacherSystemAttempt);
+
+  const systemNotif = await call("/notifications", {
+    method: "POST",
+    headers: adminAuth,
+    body: JSON.stringify({ scope: "system", title: "Chao mung", content: "Nam hoc moi bat dau" }),
+  });
+  ok("admin sends system notification", systemNotif.status === 201 || systemNotif.status === 200, systemNotif);
 
   const studentNotifs = await call("/notifications", { headers: studentAuth });
-  ok("student receives institution notification", studentNotifs.status === 200 && studentNotifs.body.length === 1, studentNotifs);
+  ok("student receives both notifications", studentNotifs.status === 200 && studentNotifs.body.length === 2, studentNotifs);
 
   console.log(`\n${failures === 0 ? "ALL PASSED" : `${failures} FAILED`}`);
   await replSet.stop();

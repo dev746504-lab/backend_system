@@ -5,9 +5,6 @@ export type LearningMaterialDocument = HydratedDocument<LearningMaterial>;
 
 @Schema({ timestamps: true })
 export class LearningMaterial {
-  @Prop({ type: SchemaTypes.ObjectId, ref: 'Institution', required: true, index: true })
-  institutionId: Types.ObjectId;
-
   @Prop({ type: SchemaTypes.ObjectId, ref: 'User', required: true, index: true })
   ownerId: Types.ObjectId;
 
@@ -17,9 +14,9 @@ export class LearningMaterial {
   @Prop({ enum: ['video', 'document', 'image', 'audio', 'interactive'], required: true })
   type: 'video' | 'document' | 'image' | 'audio' | 'interactive';
 
-  /** private = chỉ chủ sở hữu; class = chia sẻ theo lớp; institution = kho chung CSGD. */
-  @Prop({ enum: ['private', 'class', 'institution'], default: 'private' })
-  visibility: 'private' | 'class' | 'institution';
+  /** private = chỉ chủ sở hữu; class = chia sẻ theo lớp; system = kho chung toàn hệ thống. */
+  @Prop({ enum: ['private', 'class', 'system'], default: 'private' })
+  visibility: 'private' | 'class' | 'system';
 
   @Prop({ type: [SchemaTypes.ObjectId], ref: 'Class', default: [] })
   sharedWithClassIds: Types.ObjectId[];
@@ -50,5 +47,5 @@ export class LearningMaterial {
 }
 
 export const LearningMaterialSchema = SchemaFactory.createForClass(LearningMaterial);
-LearningMaterialSchema.index({ institutionId: 1, subject: 1, gradeLevel: 1 });
+LearningMaterialSchema.index({ subject: 1, gradeLevel: 1 });
 LearningMaterialSchema.index({ title: 'text', tags: 'text' });

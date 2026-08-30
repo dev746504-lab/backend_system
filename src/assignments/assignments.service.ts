@@ -28,7 +28,6 @@ export class AssignmentsService {
     }
 
     return this.assignmentModel.create({
-      institutionId: teacher.institutionId!,
       classId,
       teacherId: teacher.userId,
       ...dto,
@@ -41,7 +40,7 @@ export class AssignmentsService {
   }
 
   async findByIdForUser(assignmentId: string, user: AuthenticatedUser) {
-    const assignment = await this.assignmentModel.findOne({ _id: assignmentId, institutionId: user.institutionId }).exec();
+    const assignment = await this.assignmentModel.findById(assignmentId).exec();
     if (!assignment) throw new NotFoundException('Không tìm thấy bài tập');
 
     if (user.role === Role.STUDENT) {

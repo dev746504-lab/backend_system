@@ -5,8 +5,9 @@ export type ClassDocument = HydratedDocument<Class>;
 
 @Schema({ timestamps: true })
 export class Class {
-  @Prop({ type: SchemaTypes.ObjectId, ref: 'Institution', required: true, index: true })
-  institutionId: Types.ObjectId;
+  /** Owning teacher — source of truth for "whose class is this" (a ClassMember row for them exists too, kept in sync at creation). */
+  @Prop({ type: SchemaTypes.ObjectId, ref: 'User', required: true, index: true })
+  teacherId: Types.ObjectId;
 
   @Prop({ required: true, trim: true, maxlength: 120 })
   name: string;
@@ -17,9 +18,6 @@ export class Class {
   @Prop({ trim: true })
   gradeLevel?: string;
 
-  @Prop({ type: SchemaTypes.ObjectId, ref: 'User' })
-  homeroomTeacherId?: Types.ObjectId;
-
   @Prop({ required: true, trim: true })
   academicYear: string;
 
@@ -28,4 +26,4 @@ export class Class {
 }
 
 export const ClassSchema = SchemaFactory.createForClass(Class);
-ClassSchema.index({ institutionId: 1, academicYear: 1 });
+ClassSchema.index({ teacherId: 1, academicYear: 1 });

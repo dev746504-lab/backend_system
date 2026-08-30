@@ -5,9 +5,6 @@ export type AssignmentDocument = HydratedDocument<Assignment>;
 
 @Schema({ timestamps: true })
 export class Assignment {
-  @Prop({ type: SchemaTypes.ObjectId, ref: 'Institution', required: true, index: true })
-  institutionId: Types.ObjectId;
-
   @Prop({ type: SchemaTypes.ObjectId, ref: 'Class', required: true, index: true })
   classId: Types.ObjectId;
 

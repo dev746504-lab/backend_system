@@ -1,11 +1,11 @@
 /**
- * Two roles per institution: TEACHER holds full authority (manages the
- * institution itself - classes, members, shared materials, notifications -
- * on top of teaching), STUDENT is scoped to their own classes and work.
- * SYSTEM_ADMIN sits above institutions entirely (approves registrations).
+ * Two roles total. TEACHER owns/manages their own classes (create classes, add
+ * students, assign/grade, upload materials, notify their class). STUDENT is
+ * scoped to the classes they're a member of. There is no separate admin role —
+ * exactly one User carries `isAdmin: true` (seeded, never API-settable) on top
+ * of an otherwise ordinary TEACHER role; see AuthenticatedUser.
  */
 export enum Role {
-  SYSTEM_ADMIN = 'system_admin',
   TEACHER = 'teacher',
   STUDENT = 'student',
 }

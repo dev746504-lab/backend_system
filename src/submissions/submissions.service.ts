@@ -1,4 +1,4 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectConnection, InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import type { Connection } from 'mongoose';
@@ -22,7 +22,7 @@ export class SubmissionsService {
 
   /** Upsert theo (assignmentId, studentId) — nộp lại chỉ ghi đè, không tạo bản ghi trùng. */
   async submit(assignmentId: string, student: AuthenticatedUser, dto: SubmitAssignmentDto) {
-    const assignment = await this.assignmentModel.findOne({ _id: assignmentId, institutionId: student.institutionId }).exec();
+    const assignment = await this.assignmentModel.findById(assignmentId).exec();
     if (!assignment) throw new NotFoundException('Không tìm thấy bài tập');
 
     const isLate = Date.now() > assignment.dueDate.getTime();
@@ -88,8 +88,8 @@ export class SubmissionsService {
         const submission = await this.submissionModel.findById(submissionId).session(session);
         if (!submission) throw new NotFoundException('Không tìm thấy bài nộp');
 
-        const assignment = await this.assignmentModel.findOne({ _id: submission.assignmentId, institutionId: grader.institutionId }).session(session);
-        if (!assignment) throw new ForbiddenException('Bài nộp không thuộc cơ sở giáo dục của bạn');
+        const assignment = await this.assignmentModel.findById(submission.assignmentId).session(session);
+        if (!assignment) throw new NotFoundException('Không tìm thấy bài tập');
         if (String(assignment.teacherId) !== grader.userId) {
           throw new ForbiddenException('Chỉ giáo viên phụ trách mới được chấm bài này');
         }
@@ -121,7 +121,7 @@ export class SubmissionsService {
     try {
       let updated!: SubmissionDocument;
       await session.withTransaction(async () => {
-        const assignment = await this.assignmentModel.findOne({ _id: assignmentId, institutionId: grader.institutionId }).session(session);
+        const assignment = await this.assignmentModel.findById(assignmentId).session(session);
         if (!assignment) throw new NotFoundException('Không tìm thấy bài tập');
         if (String(assignment.teacherId) !== grader.userId) {
           throw new ForbiddenException('Chỉ giáo viên phụ trách mới được chấm bài này');
@@ -132,6 +132,18 @@ export class SubmissionsService {
           .session(session);
         if (!isMember) throw new NotFoundException('Học sinh không thuộc lớp này');
 
+        // Checked here explicitly rather than relying on the schema's
+        // cross-field validator (`score <= this.maxScoreSnapshot`): that
+        // validator reads a sibling path off the *document*, but
+        // findOneAndUpdate's update-validators run against the query/update
+        // object, not a hydrated document, so `this.maxScoreSnapshot` is
+        // always undefined there — every first grade of a never-submitted
+        // student failed validation ("score vượt quá maxScore") regardless
+        // of the actual score.
+        if (dto.score > assignment.maxScore) {
+          throw new BadRequestException(`Điểm không được vượt quá ${assignment.maxScore}`);
+        }
+
         const result = await this.submissionModel.findOneAndUpdate(
           { assignmentId, studentId },
           {
@@ -141,10 +153,14 @@ export class SubmissionsService {
               gradedBy: new Types.ObjectId(grader.userId),
               gradedAt: new Date(),
               status: 'graded',
+              maxScoreSnapshot: assignment.maxScore,
             },
-            $setOnInsert: { maxScoreSnapshot: assignment.maxScore },
           },
-          { upsert: true, new: true, runValidators: true, session },
+          // runValidators: false — the cross-field score validator can't see
+          // sibling $set fields in findOneAndUpdate's validation context (see
+          // comment above); the DTO already enforces 0-100 via class-validator,
+          // and the maxScore check above covers the business rule that matters.
+          { upsert: true, new: true, session },
         );
         updated = result!;
 

@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
+import { Role } from '../../common/enums/role.enum.js';
 
 export type UserDocument = HydratedDocument<User>;
 
@@ -20,15 +21,19 @@ export class User {
   @Prop()
   avatarUrl?: string;
 
+  /** Global — no more per-institution membership to derive it from. */
+  @Prop({ enum: Role, required: true })
+  role: Role;
+
   @Prop({ enum: ['active', 'locked'], default: 'active' })
   status: 'active' | 'locked';
 
   @Prop({ default: false })
   emailVerified: boolean;
 
-  /** Platform-level role, independent of any institution membership. Seeded directly in the database — never settable through the API. */
+  /** Highest authority in the system. Seeded directly in the database — never settable through the API. */
   @Prop({ default: false })
-  isSystemAdmin: boolean;
+  isAdmin: boolean;
 
   @Prop()
   lastLoginAt?: Date;

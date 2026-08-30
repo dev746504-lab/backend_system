@@ -13,8 +13,11 @@ export class NotificationsService {
     @InjectModel(ClassMember.name) private readonly classMemberModel: Model<ClassMemberDocument>,
   ) {}
 
-  /** Guard đã giới hạn endpoint cho Role.TEACHER — mọi giáo viên đều được gửi thông báo toàn CSGD. */
+  /** scope='system' (toàn hệ thống) chỉ admin gửi được; scope='class' phải là giáo viên phụ trách lớp đó. */
   async send(sender: AuthenticatedUser, dto: SendNotificationDto) {
+    if (dto.scope === 'system' && !sender.isAdmin) {
+      throw new ForbiddenException('Chỉ quản trị viên mới gửi được thông báo toàn hệ thống');
+    }
     if (dto.scope === 'class') {
       if (!dto.classId) throw new BadRequestException('Thiếu classId cho thông báo theo lớp');
       const isTeacher = await this.classMemberModel.exists({ classId: dto.classId, userId: sender.userId, role: 'teacher', status: 'active' });
@@ -22,7 +25,6 @@ export class NotificationsService {
     }
 
     return this.notificationModel.create({
-      institutionId: sender.institutionId!,
       senderId: sender.userId,
       scope: dto.scope,
       classId: dto.classId,
@@ -39,8 +41,7 @@ export class NotificationsService {
 
     return this.notificationModel
       .find({
-        institutionId: user.institutionId,
-        $or: [{ scope: 'institution' }, { scope: 'class', classId: { $in: classIds } }, { scope: 'user', recipientUserId: user.userId }],
+        $or: [{ scope: 'system' }, { scope: 'class', classId: { $in: classIds } }, { scope: 'user', recipientUserId: user.userId }],
       })
       .sort({ createdAt: -1 })
       .exec();

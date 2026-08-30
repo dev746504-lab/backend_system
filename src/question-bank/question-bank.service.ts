@@ -8,13 +8,13 @@ import { CreateQuestionDto } from './dto/create-question.dto.js';
 export class QuestionBankService {
   constructor(@InjectModel(Question.name) private readonly questionModel: Model<QuestionDocument>) {}
 
-  create(institutionId: string, ownerId: string, dto: CreateQuestionDto) {
-    return this.questionModel.create({ institutionId, ownerId, ...dto });
+  create(ownerId: string, dto: CreateQuestionDto) {
+    return this.questionModel.create({ ownerId, ...dto });
   }
 
-  search(institutionId: string, filters: { subject?: string; topic?: string }) {
+  search(filters: { subject?: string; topic?: string }) {
     return this.questionModel
-      .find({ institutionId, ...(filters.subject && { subject: filters.subject }), ...(filters.topic && { topic: filters.topic }) })
+      .find({ ...(filters.subject && { subject: filters.subject }), ...(filters.topic && { topic: filters.topic }) })
       .sort({ createdAt: -1 })
       .exec();
   }

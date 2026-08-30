@@ -15,14 +15,11 @@ export const ReadReceiptSchema = SchemaFactory.createForClass(ReadReceipt);
 
 @Schema({ timestamps: true })
 export class Notification {
-  @Prop({ type: SchemaTypes.ObjectId, ref: 'Institution', required: true, index: true })
-  institutionId: Types.ObjectId;
-
   @Prop({ type: SchemaTypes.ObjectId, ref: 'User', required: true })
   senderId: Types.ObjectId;
 
-  @Prop({ enum: ['institution', 'class', 'user'], required: true })
-  scope: 'institution' | 'class' | 'user';
+  @Prop({ enum: ['system', 'class', 'user'], required: true })
+  scope: 'system' | 'class' | 'user';
 
   @Prop({ type: SchemaTypes.ObjectId, ref: 'Class' })
   classId?: Types.ObjectId;
@@ -44,4 +41,4 @@ export class Notification {
 }
 
 export const NotificationSchema = SchemaFactory.createForClass(Notification);
-NotificationSchema.index({ institutionId: 1, createdAt: -1 });
+NotificationSchema.index({ scope: 1, createdAt: -1 });

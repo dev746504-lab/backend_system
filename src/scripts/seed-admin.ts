@@ -3,14 +3,15 @@ import dns from 'node:dns';
 import mongoose from 'mongoose';
 import * as argon2 from 'argon2';
 import { User, UserSchema } from '../users/schemas/user.schema.js';
+import { Role } from '../common/enums/role.enum.js';
 
 if (process.env.MONGODB_DNS_SERVERS) {
   dns.setServers(process.env.MONGODB_DNS_SERVERS.split(',').map((s) => s.trim()));
 }
 
 /**
- * Tạo tài khoản Quản trị hệ thống (system_admin) đầu tiên — vai trò này
- * không tự đăng ký được qua API, phải khởi tạo trực tiếp trong database.
+ * Tạo/nâng cấp một tài khoản thành admin (quyền cao nhất) — cờ này không tự
+ * đăng ký được qua API, phải khởi tạo trực tiếp trong database.
  *
  * Chạy: npm run seed:admin -- admin@lms.vn "MatKhauManh123"
  */
@@ -29,13 +30,13 @@ async function main() {
 
   const existing = await UserModel.findOne({ email: email.toLowerCase() });
   if (existing) {
-    console.log(`Đã tồn tại user ${email} — cập nhật thành system_admin.`);
-    existing.isSystemAdmin = true;
+    console.log(`Đã tồn tại user ${email} — nâng cấp thành admin.`);
+    existing.isAdmin = true;
     await existing.save();
   } else {
     const passwordHash = await argon2.hash(password);
-    await UserModel.create({ email, passwordHash, fullName: 'System Admin', isSystemAdmin: true, emailVerified: true });
-    console.log(`Đã tạo system_admin: ${email}`);
+    await UserModel.create({ email, passwordHash, fullName: 'Admin', role: Role.TEACHER, isAdmin: true, emailVerified: true });
+    console.log(`Đã tạo admin: ${email}`);
   }
 
   await mongoose.disconnect();

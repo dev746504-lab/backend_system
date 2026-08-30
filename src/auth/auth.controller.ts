@@ -1,7 +1,6 @@
 import { Body, Controller, Get, HttpCode, Post, Req, Res, UnauthorizedException, UseGuards } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { AuthService } from './auth.service.js';
-import { RegisterInstitutionDto } from './dto/register-institution.dto.js';
 import { LoginDto } from './dto/login.dto.js';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard.js';
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
@@ -32,11 +31,6 @@ const REFRESH_COOKIE_OPTIONS = {
 @Controller('auth')
 export class AuthController {
   constructor(private readonly auth: AuthService) {}
-
-  @Post('register-institution')
-  registerInstitution(@Body() dto: RegisterInstitutionDto) {
-    return this.auth.registerInstitution(dto);
-  }
 
   @Post('login')
   @HttpCode(200)

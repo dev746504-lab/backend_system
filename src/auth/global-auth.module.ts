@@ -4,7 +4,7 @@ import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from './strategies/jwt.strategy.js';
 
 /**
- * JwtAuthGuard/RolesGuard/TenantGuard are applied via @UseGuards() on
+ * JwtAuthGuard/RolesGuard/AdminGuard are applied via @UseGuards() on
  * controllers across every feature module (ClassesModule, MaterialsModule, ...),
  * not just AuthModule. Nest resolves a guard's dependencies in the module that
  * declares the controller, so the Passport/JWT machinery must be global —

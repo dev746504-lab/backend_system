@@ -2,13 +2,12 @@ import { Controller, ForbiddenException, Get, Param, Query, UseGuards } from '@n
 import { ReportsService } from './reports.service.js';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard.js';
 import { RolesGuard } from '../common/guards/roles.guard.js';
-import { TenantGuard } from '../common/guards/tenant.guard.js';
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import { Role } from '../common/enums/role.enum.js';
 import type { AuthenticatedUser } from '../common/types/authenticated-user.js';
 
 @Controller()
-@UseGuards(JwtAuthGuard, RolesGuard, TenantGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class ReportsController {
   constructor(private readonly reports: ReportsService) {}
 

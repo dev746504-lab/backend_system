@@ -14,6 +14,6 @@ import { MaterialsController } from './materials.controller.js';
   ],
   controllers: [MaterialsController],
   providers: [MaterialsService],
-  exports: [MongooseModule],
+  exports: [MongooseModule, MaterialsService],
 })
 export class MaterialsModule {}

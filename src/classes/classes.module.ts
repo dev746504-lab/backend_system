@@ -4,6 +4,7 @@ import { Class, ClassSchema } from './schemas/class.schema.js';
 import { ClassMember, ClassMemberSchema } from './schemas/class-member.schema.js';
 import { ClassesService } from './classes.service.js';
 import { ClassesController } from './classes.controller.js';
+import { UsersModule } from '../users/users.module.js';
 
 @Module({
   imports: [
@@ -11,6 +12,7 @@ import { ClassesController } from './classes.controller.js';
       { name: Class.name, schema: ClassSchema },
       { name: ClassMember.name, schema: ClassMemberSchema },
     ]),
+    UsersModule,
   ],
   controllers: [ClassesController],
   providers: [ClassesService],

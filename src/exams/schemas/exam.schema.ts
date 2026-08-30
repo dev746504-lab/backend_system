@@ -15,9 +15,6 @@ export const ExamQuestionRefSchema = SchemaFactory.createForClass(ExamQuestionRe
 
 @Schema({ timestamps: true })
 export class Exam {
-  @Prop({ type: SchemaTypes.ObjectId, ref: 'Institution', required: true, index: true })
-  institutionId: Types.ObjectId;
-
   @Prop({ type: SchemaTypes.ObjectId, ref: 'User', required: true })
   createdBy: Types.ObjectId;
 
