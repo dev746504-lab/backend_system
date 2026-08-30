@@ -9,16 +9,23 @@ import type { AuthenticatedUser } from '../common/types/authenticated-user.js';
 
 const REFRESH_COOKIE = 'refresh_token';
 /**
- * sameSite: 'none' — frontend and backend are deployed on different domains
- * (e.g. Vercel + Render), so this is a genuinely cross-site cookie. 'strict'
- * or 'lax' would silently never be sent back, breaking session persistence
- * across reloads. Requires secure:true (HTTPS), which is already set.
+ * sameSite: 'none' — the browser only ever sees this cookie for direct
+ * cross-origin calls to the backend (local dev without the frontend's /api
+ * proxy, or hitting the API directly). Through the frontend's Next.js
+ * rewrite proxy the request is same-origin instead and this setting is
+ * simply more permissive than required, not wrong.
+ *
+ * path: '/' — the frontend calls this endpoint at two different path
+ * shapes depending on how it's reached: '/auth/refresh' when the API is
+ * hit directly, '/api/v1/auth/refresh' when proxied through the frontend's
+ * own domain. A cookie scoped to '/auth' silently never matches the second
+ * one, so the browser drops it and every reload looks like a fresh login.
  */
 const REFRESH_COOKIE_OPTIONS = {
   httpOnly: true,
   secure: true,
   sameSite: 'none' as const,
-  path: '/auth',
+  path: '/',
   maxAge: 7 * 24 * 60 * 60 * 1000,
 };
 
@@ -58,7 +65,7 @@ export class AuthController {
   @Post('logout')
   @HttpCode(200)
   logout(@Res({ passthrough: true }) res: Response) {
-    res.clearCookie(REFRESH_COOKIE, { path: '/auth' });
+    res.clearCookie(REFRESH_COOKIE, { path: '/' });
     return { message: 'Đã đăng xuất' };
   }
 }
