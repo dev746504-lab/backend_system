@@ -21,9 +21,9 @@ export class AssignmentsService {
 
     // Ràng buộc nghiệp vụ được lặp lại ở đây (thay vì chỉ nằm trong schema pre-validate)
     // để trả về 400 rõ ràng thay vì 500 khi Mongoose validation throw lỗi thô.
-    if (dto.type === 'online' && !dto.examId) {
-      throw new BadRequestException('Bài tập online phải gắn một đề thi (examId)');
-    }
+    // examId là tuỳ chọn: "online" nghĩa là học sinh nộp bài làm dạng văn bản
+    // qua app (khác "offline" - làm ngoài app, giáo viên chấm tay) - không bắt
+    // buộc phải gắn đề thi trắc nghiệm (chưa có giao diện tạo đề thi).
     if (new Date(dto.dueDate).getTime() <= Date.now()) {
       throw new BadRequestException('Hạn nộp phải ở tương lai');
     }

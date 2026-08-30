@@ -39,12 +39,9 @@ export class Assignment {
 export const AssignmentSchema = SchemaFactory.createForClass(Assignment);
 AssignmentSchema.index({ classId: 1, dueDate: 1 });
 
-/** Ràng buộc nghiệp vụ: hạn nộp phải sau thời điểm tạo, đề online bắt buộc gắn examId. */
+/** Ràng buộc nghiệp vụ: hạn nộp phải sau thời điểm tạo. */
 AssignmentSchema.pre('validate', function () {
   if (this.isNew && this.dueDate.getTime() <= Date.now()) {
     throw new Error('dueDate phải ở tương lai');
-  }
-  if (this.type === 'online' && !this.examId) {
-    throw new Error('Bài tập online phải gắn một examId');
   }
 });

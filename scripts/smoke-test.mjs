@@ -147,6 +147,34 @@ async function main() {
     progress,
   );
 
+  // --- online assignment: no examId required, student submits free text, teacher reads + grades it ---
+  const dueDate2 = new Date(Date.now() + 3600_000).toISOString();
+  const createOnline = await call(`/classes/${classId}/assignments`, {
+    method: "POST",
+    headers: teacherAuth,
+    body: JSON.stringify({ title: "Bai luan online", type: "online", dueDate: dueDate2, maxScore: 10 }),
+  });
+  ok("create online assignment without examId", createOnline.status === 201 || createOnline.status === 200, createOnline);
+  const onlineAssignmentId = createOnline.body._id;
+
+  const onlineSubmit = await call(`/assignments/${onlineAssignmentId}/submissions`, {
+    method: "POST",
+    headers: studentAuth,
+    body: JSON.stringify({ textContent: "Day la bai lam cua em." }),
+  });
+  ok("student submits free-text answer", onlineSubmit.status === 201 || onlineSubmit.status === 200, onlineSubmit);
+
+  const onlineRoster = await call(`/assignments/${onlineAssignmentId}/submissions`, { headers: teacherAuth });
+  const onlineRow = onlineRoster.body?.find?.((s) => s.studentId._id === studentId);
+  ok("teacher sees the submitted text content", onlineRow?.textContent === "Day la bai lam cua em.", onlineRoster);
+
+  const onlineGrade = await call(`/assignments/${onlineAssignmentId}/students/${studentId}/grade`, {
+    method: "PATCH",
+    headers: teacherAuth,
+    body: JSON.stringify({ score: 10, feedback: "Xuat sac" }),
+  });
+  ok("grade the online submission", onlineGrade.status === 200 && onlineGrade.body.status === "graded", onlineGrade);
+
   // --- admin sees the class in the system-wide list ---
   const allClasses = await call("/admin/classes", { headers: adminAuth });
   ok("GET /admin/classes has 1 entry", Array.isArray(allClasses.body) && allClasses.body.length === 1, allClasses);
