@@ -1,4 +1,4 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Assignment, type AssignmentDocument } from './schemas/assignment.schema.js';
@@ -17,6 +17,15 @@ export class AssignmentsService {
   async create(classId: string, teacher: AuthenticatedUser, dto: CreateAssignmentDto) {
     const isTeacher = await this.classMemberModel.exists({ classId, userId: teacher.userId, role: 'teacher', status: 'active' });
     if (!isTeacher) throw new ForbiddenException('Bạn không phụ trách lớp này');
+
+    // Ràng buộc nghiệp vụ được lặp lại ở đây (thay vì chỉ nằm trong schema pre-validate)
+    // để trả về 400 rõ ràng thay vì 500 khi Mongoose validation throw lỗi thô.
+    if (dto.type === 'online' && !dto.examId) {
+      throw new BadRequestException('Bài tập online phải gắn một đề thi (examId)');
+    }
+    if (new Date(dto.dueDate).getTime() <= Date.now()) {
+      throw new BadRequestException('Hạn nộp phải ở tương lai');
+    }
 
     return this.assignmentModel.create({
       institutionId: teacher.institutionId!,

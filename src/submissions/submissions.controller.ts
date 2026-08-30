@@ -38,4 +38,16 @@ export class SubmissionsController {
   grade(@Param('submissionId') submissionId: string, @CurrentUser() teacher: AuthenticatedUser, @Body() dto: GradeSubmissionDto) {
     return this.submissions.grade(submissionId, teacher, dto);
   }
+
+  /** Chấm điểm trực tiếp theo (assignmentId, studentId) — dùng cho bài offline không có Submission có sẵn. */
+  @Patch('assignments/:assignmentId/students/:studentId/grade')
+  @Roles(Role.TEACHER)
+  gradeDirect(
+    @Param('assignmentId') assignmentId: string,
+    @Param('studentId') studentId: string,
+    @CurrentUser() teacher: AuthenticatedUser,
+    @Body() dto: GradeSubmissionDto,
+  ) {
+    return this.submissions.gradeDirect(assignmentId, studentId, teacher, dto);
+  }
 }

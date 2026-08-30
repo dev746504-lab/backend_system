@@ -17,8 +17,8 @@ export class ClassesController {
 
   @Post('institutions/:institutionId/classes')
   @Roles(Role.TEACHER)
-  create(@Param('institutionId') institutionId: string, @Body() dto: CreateClassDto) {
-    return this.classes.create(institutionId, dto);
+  create(@Param('institutionId') institutionId: string, @CurrentUser() teacher: AuthenticatedUser, @Body() dto: CreateClassDto) {
+    return this.classes.create(institutionId, teacher.userId, dto);
   }
 
   @Get('institutions/:institutionId/classes')

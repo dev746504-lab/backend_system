@@ -65,12 +65,15 @@ export class InstitutionsController {
     }
 
     let user = await this.users.findByEmail(dto.email);
+    let tempPassword: string | undefined;
     if (!user) {
-      const tempPassword = randomBytes(9).toString('base64url');
+      tempPassword = randomBytes(9).toString('base64url');
       const passwordHash = await argon2.hash(tempPassword);
       user = await this.users.create({ email: dto.email, passwordHash, fullName: dto.fullName });
     }
     await this.memberships.create({ userId: user._id, institutionId, role: dto.role });
-    return { userId: user._id, email: user.email, role: dto.role };
+    // tempPassword chỉ có khi vừa tạo tài khoản mới - trả về một lần duy nhất để
+    // giáo viên gửi lại cho thành viên (chưa có luồng mời qua email/token thật).
+    return { userId: user._id, email: user.email, role: dto.role, tempPassword };
   }
 }
