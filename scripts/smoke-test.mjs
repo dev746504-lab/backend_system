@@ -249,6 +249,76 @@ async function main() {
     listAfterDelete,
   );
 
+  // --- draft/assigned/closed lifecycle: publish/close endpoints, student visibility ---
+  const draftDue = new Date(Date.now() + 7200_000).toISOString();
+  const createDraft = await call(`/classes/${classId}/assignments`, {
+    method: "POST",
+    headers: teacherAuth,
+    body: JSON.stringify({ title: "Bai tap nhap", type: "offline", dueDate: draftDue, maxScore: 10, status: "draft" }),
+  });
+  ok("teacher creates a draft assignment", createDraft.status === 201 && createDraft.body.status === "draft", createDraft);
+  const draftId = createDraft.body._id;
+
+  const studentListBeforePublish = await call(`/classes/${classId}/assignments`, { headers: studentAuth });
+  ok(
+    "student does not see the draft assignment",
+    Array.isArray(studentListBeforePublish.body) && !studentListBeforePublish.body.some((a) => a._id === draftId),
+    studentListBeforePublish,
+  );
+
+  const teacherListSeesDraft = await call(`/classes/${classId}/assignments`, { headers: teacherAuth });
+  ok(
+    "teacher sees the draft assignment",
+    Array.isArray(teacherListSeesDraft.body) && teacherListSeesDraft.body.some((a) => a._id === draftId),
+    teacherListSeesDraft,
+  );
+
+  const studentGetDraftDirect = await call(`/assignments/${draftId}`, { headers: studentAuth });
+  ok("student fetching the draft assignment directly gets 404", studentGetDraftDirect.status === 404, studentGetDraftDirect);
+
+  const submitToDraft = await call(`/assignments/${draftId}/submissions`, {
+    method: "POST",
+    headers: studentAuth,
+    body: JSON.stringify({ textContent: "khong duoc phep" }),
+  });
+  ok("submitting to a draft assignment is rejected", submitToDraft.status === 400, submitToDraft);
+
+  const closeDraft = await call(`/assignments/${draftId}/close`, { method: "PATCH", headers: teacherAuth });
+  ok("closing a draft assignment is rejected (must be assigned first)", closeDraft.status === 400, closeDraft);
+
+  const publishDraft = await call(`/assignments/${draftId}/publish`, { method: "PATCH", headers: teacherAuth });
+  ok("teacher publishes the draft", publishDraft.status === 200 && publishDraft.body.status === "assigned", publishDraft);
+
+  const publishAgain = await call(`/assignments/${draftId}/publish`, { method: "PATCH", headers: teacherAuth });
+  ok("publishing an already-assigned assignment is rejected", publishAgain.status === 400, publishAgain);
+
+  const studentListAfterPublish = await call(`/classes/${classId}/assignments`, { headers: studentAuth });
+  ok(
+    "student sees the assignment after it's published",
+    Array.isArray(studentListAfterPublish.body) && studentListAfterPublish.body.some((a) => a._id === draftId),
+    studentListAfterPublish,
+  );
+
+  const closeAssignment = await call(`/assignments/${draftId}/close`, { method: "PATCH", headers: teacherAuth });
+  ok("teacher closes the assignment", closeAssignment.status === 200 && closeAssignment.body.status === "closed", closeAssignment);
+
+  const closeAgain = await call(`/assignments/${draftId}/close`, { method: "PATCH", headers: teacherAuth });
+  ok("closing an already-closed assignment is rejected", closeAgain.status === 400, closeAgain);
+
+  const submitToClosed = await call(`/assignments/${draftId}/submissions`, {
+    method: "POST",
+    headers: studentAuth,
+    body: JSON.stringify({ textContent: "da dong roi" }),
+  });
+  ok("submitting to a closed assignment is rejected", submitToClosed.status === 400, submitToClosed);
+
+  const studentListAfterClose = await call(`/classes/${classId}/assignments`, { headers: studentAuth });
+  ok(
+    "student still sees the closed assignment (history/grade visibility)",
+    Array.isArray(studentListAfterClose.body) && studentListAfterClose.body.some((a) => a._id === draftId),
+    studentListAfterClose,
+  );
+
   // --- admin sees the class in the system-wide list ---
   const allClasses = await call("/admin/classes", { headers: adminAuth });
   ok("GET /admin/classes has 1 entry", Array.isArray(allClasses.body) && allClasses.body.length === 1, allClasses);

@@ -21,8 +21,8 @@ export class AssignmentsController {
   }
 
   @Get('classes/:classId/assignments')
-  listForClass(@Param('classId') classId: string) {
-    return this.assignments.listForClass(classId);
+  listForClass(@Param('classId') classId: string, @CurrentUser() user: AuthenticatedUser) {
+    return this.assignments.listForClass(classId, user);
   }
 
   @Get('assignments/:assignmentId')
@@ -41,5 +41,17 @@ export class AssignmentsController {
   @HttpCode(204)
   remove(@Param('assignmentId') assignmentId: string, @CurrentUser() teacher: AuthenticatedUser) {
     return this.assignments.remove(assignmentId, teacher);
+  }
+
+  @Patch('assignments/:assignmentId/publish')
+  @Roles(Role.TEACHER)
+  publish(@Param('assignmentId') assignmentId: string, @CurrentUser() teacher: AuthenticatedUser) {
+    return this.assignments.publish(assignmentId, teacher);
+  }
+
+  @Patch('assignments/:assignmentId/close')
+  @Roles(Role.TEACHER)
+  close(@Param('assignmentId') assignmentId: string, @CurrentUser() teacher: AuthenticatedUser) {
+    return this.assignments.close(assignmentId, teacher);
   }
 }

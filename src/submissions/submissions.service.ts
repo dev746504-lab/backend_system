@@ -28,6 +28,9 @@ export class SubmissionsService {
 
     const assignment = await this.assignmentModel.findOne({ _id: assignmentId, deletedAt: null }).exec();
     if (!assignment) throw new NotFoundException('Không tìm thấy bài tập');
+    if (assignment.status !== 'assigned') {
+      throw new BadRequestException('Bài tập chưa được giao hoặc đã đóng, không thể nộp bài');
+    }
 
     const isLate = Date.now() > assignment.dueDate.getTime();
     return this.submissionModel.findOneAndUpdate(

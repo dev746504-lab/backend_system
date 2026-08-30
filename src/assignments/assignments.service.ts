@@ -39,8 +39,18 @@ export class AssignmentsService {
     });
   }
 
-  listForClass(classId: string) {
-    return this.assignmentModel.find({ classId, deletedAt: null }).sort({ dueDate: 1 }).exec();
+  async listForClass(classId: string, user: AuthenticatedUser) {
+    const isMember = await this.classMemberModel.exists({ classId, userId: user.userId, status: 'active' });
+    if (!user.isAdmin && !isMember) throw new ForbiddenException('Bạn không thuộc lớp này');
+
+    // Học sinh không thấy bài ở trạng thái 'draft' - giáo viên/admin thấy tất cả
+    // (kể cả draft) để còn publish. 'closed' vẫn hiển thị cho học sinh vì đó chỉ
+    // là ngừng nhận bài nộp mới, không phải ẩn lịch sử/điểm đã có.
+    const filter: Record<string, unknown> = { classId, deletedAt: null };
+    if (user.role === Role.STUDENT) {
+      filter.status = { $in: ['assigned', 'closed'] as const };
+    }
+    return this.assignmentModel.find(filter).sort({ dueDate: 1 }).exec();
   }
 
   async findByIdForUser(assignmentId: string, user: AuthenticatedUser) {
@@ -50,8 +60,28 @@ export class AssignmentsService {
     if (user.role === Role.STUDENT) {
       const isMember = await this.classMemberModel.exists({ classId: assignment.classId, userId: user.userId, status: 'active' });
       if (!isMember) throw new ForbiddenException('Bạn không thuộc lớp được giao bài này');
+      // Coi như không tồn tại thay vì 403, để không lộ việc bài draft có tồn tại.
+      if (assignment.status === 'draft') throw new NotFoundException('Không tìm thấy bài tập');
     }
     return assignment;
+  }
+
+  async publish(assignmentId: string, teacher: AuthenticatedUser) {
+    const assignment = await this.findEditable(assignmentId, teacher);
+    if (assignment.status !== 'draft') {
+      throw new BadRequestException('Chỉ bài đang ở trạng thái nháp mới publish được');
+    }
+    assignment.status = 'assigned';
+    return assignment.save();
+  }
+
+  async close(assignmentId: string, teacher: AuthenticatedUser) {
+    const assignment = await this.findEditable(assignmentId, teacher);
+    if (assignment.status !== 'assigned') {
+      throw new BadRequestException('Chỉ bài đang giao mới đóng được');
+    }
+    assignment.status = 'closed';
+    return assignment.save();
   }
 
   /**

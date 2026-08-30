@@ -21,4 +21,8 @@ export class CreateAssignmentDto {
 
   @IsInt() @Min(0) @Max(100)
   maxScore: number;
+
+  /** Không nhận 'closed' ở đây - việc đóng bài tập chỉ đi qua endpoint publish/close riêng. */
+  @IsOptional() @IsEnum(['draft', 'assigned'])
+  status?: 'draft' | 'assigned';
 }
